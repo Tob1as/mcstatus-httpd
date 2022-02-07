@@ -55,7 +55,7 @@ def do_mcstatus(self):
 
     # JSON
     jsondata = {
-      'java': [{
+      'java': {
         'hostname': MINECRAFT_SERVER,
         'port': int(MINECRAFT_SERVER_PORT),
         'software': {
@@ -70,8 +70,8 @@ def do_mcstatus(self):
         },
     	'map': query.map,
     	'motd': query.motd
-      }],
-      'bedrock': [{
+      },
+      'bedrock': {
         'hostname': MINECRAFT_BEDROCK_SERVER,
         'port': int(MINECRAFT_BEDROCK_SERVER_PORT),
          'software': {
@@ -86,7 +86,7 @@ def do_mcstatus(self):
         'map': status.map,
         'motd': status.motd,
         'gamemode': status.gamemode
-      }]
+      }
     }
     
     # httpd output

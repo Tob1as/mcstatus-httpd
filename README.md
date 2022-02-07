@@ -58,7 +58,7 @@ URL: `http://localhost:8080`
 
 ```json
 {
-	"java": [{
+	"java": {
 		"hostname": "minecraft.example.com",
 		"port": 25565,
 		"software": {
@@ -73,8 +73,8 @@ URL: `http://localhost:8080`
 		},
 		"map": "world",
 		"motd": "A §l§cMinecraft§r §nserver"
-	}],
-	"bedrock": [{
+	},
+	"bedrock": {
 		"hostname": "minecraft-bedrock.example.com",
 		"port": 19132,
 		"software": {
@@ -89,6 +89,6 @@ URL: `http://localhost:8080`
 		"map": "Bedrock level",
 		"motd": "Minecraft Bedrock Server",
 		"gamemode": "Survival"
-	}]
+	}
 }
 ```
