@@ -1,4 +1,4 @@
-name: 'build docker images: ToolBox'
+name: 'build docker images: mcstatus-httpd'
 
 on:
   #push:
