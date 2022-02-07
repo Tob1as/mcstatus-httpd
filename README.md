@@ -12,7 +12,7 @@ But you are welcome to work on it. ;-)
 ## Minecraft Server
 
 I use Minecraft Server with Docker:
-* [Minecraft (Java Edition)](https://github.com/itzg/docker-minecraft-server)
+* [Minecraft Java Edition](https://github.com/itzg/docker-minecraft-server)
 * [Minecraft Bedrock Edition](https://github.com/itzg/docker-minecraft-bedrock-server)
 
 Examples for docker-compose (minecraft.yml, minecraft-bedrock.yml) you can find here: [click](https://github.com/Tob1asDocker/Collection/tree/master/docker-compose_examples)
