@@ -1,0 +1,31 @@
+version: '2.4'
+services:
+
+  mcstatus-httpd:
+    #build:
+    #  context: ./
+    #  dockerfile: Dockerfile
+    image: ghcr.io/tob1as/mcstatus-httpd:latest
+    container_name: mcstatus-httpd
+    restart: unless-stopped
+    ports:
+      - 8080:8080/tcp
+    #volumes:
+    #  - ./mcstatus-httpd.py:/service/mcstatus-httpd.py:rw
+    #  #- ./ssl/ssl.crt:/service/ssl.crt:ro
+    #  #- ./ssl/ssl.crt:/service/ssl.key:ro
+    environment:
+      TZ: Europe/Berlin
+      MINECRAFT_SERVER: minecraft
+      MINECRAFT_SERVER_PORT: 25565
+      MINECRAFT_BEDROCK_SERVER: minecraft-bedrock
+      MINECRAFT_BEDROCK_SERVER_PORT: 19132
+    #entrypoint: [ "/bin/sh", "-c", "--" ]
+    #command: [ "while true; do sleep 60; done;" ]
+    healthcheck:
+      test:  wget --quiet --tries=1 --spider http://localhost:8080/healthcheck || exit 1
+      #test:  wget --quiet --tries=1 --spider --no-check-certificate  https://localhost:8443/healthcheck || exit 1
+      #start_period: 10s
+      interval: 120s
+      timeout: 3s
+      retries: 3
