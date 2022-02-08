@@ -59,7 +59,7 @@ URL: `http://localhost:8080`
 ```json
 {
 	"java": {
-		"hostname": "minecraft.example.com",
+		"hostname": "minecraft",
 		"port": 25565,
 		"software": {
 			"version": "1.18.1",
@@ -72,15 +72,15 @@ URL: `http://localhost:8080`
 			"list": ""
 		},
 		"map": "world",
-		"motd": "A §l§cMinecraft§r §nserver"
+		"motd": "A \u00a7l\u00a7cMinecraft\u00a7r \u00a7nserver"
 	},
 	"bedrock": {
-		"hostname": "minecraft-bedrock.example.com",
+		"hostname": "minecraft.ison.ws",
 		"port": 19132,
 		"software": {
-			"version": "1.18.2",
+			"version": "1.18.11",
 			"brand": "MCPE",
-			"protocol": "475"
+			"protocol": "486"
 		},
 		"players": {
 			"online": 0,
