@@ -1,7 +1,7 @@
 # mcstatus-httpd
 
 mcstatus-httpd shows any information of a Minecraft Server via HTTP-Server as JSON. 
-It used [mcstatus](https://github.com/Dinnerbone/mcstatus).
+It used [mcstatus](https://github.com/py-mine/mcstatus).
 
 ## INFO
 
