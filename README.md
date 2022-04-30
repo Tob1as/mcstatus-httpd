@@ -36,8 +36,8 @@ services:
       - 8080:8080/tcp
     environment:
       #TZ: Europe/Berlin
-      MINECRAFT_SERVER: minecraft.example.com
-      MINECRAFT_SERVER_PORT: 25565
+      MINECRAFT_JAVA_SERVER: minecraft.example.com
+      MINECRAFT_JAVA_SERVER_PORT: 25565
       MINECRAFT_BEDROCK_SERVER: minecraft-bedrock.example.com
       MINECRAFT_BEDROCK_SERVER_PORT: 19132
     healthcheck:

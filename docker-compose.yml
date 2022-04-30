@@ -16,10 +16,12 @@ services:
     #  #- ./ssl/ssl.crt:/service/ssl.key:ro
     environment:
       TZ: Europe/Berlin
-      MINECRAFT_SERVER: minecraft
-      MINECRAFT_SERVER_PORT: 25565
+      MINECRAFT_JAVA_SERVER: minecraft
+      MINECRAFT_JAVA_SERVER_PORT: 25565
+      #MINECRAFT_JAVA_SERVER_OVERWRITE: minecraft.example.com
       MINECRAFT_BEDROCK_SERVER: minecraft-bedrock
       MINECRAFT_BEDROCK_SERVER_PORT: 19132
+      #MINECRAFT_BEDROCK_SERVER_OVERWRITE: minecraft-bedrock.example.com
     #entrypoint: [ "/bin/sh", "-c", "--" ]
     #command: [ "while true; do sleep 60; done;" ]
     healthcheck:

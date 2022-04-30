@@ -1,22 +1,26 @@
 import os
 import time
 import json
-from mcstatus import JavaServer
-from mcstatus import BedrockServer
+from mcstatus import JavaServer     # mcstatus docs: https://github.com/py-mine/mcstatus
+from mcstatus import BedrockServer  # mcstatus docs: https://github.com/py-mine/mcstatus
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from http import HTTPStatus
 #import ssl
 
-MINECRAFT_SERVER = str(os.environ.get('MINECRAFT_SERVER', ''))
-MINECRAFT_SERVER_PORT = int(os.environ.get('MINECRAFT_SERVER_PORT', 25565))
+MINECRAFT_JAVA_SERVER = str(os.environ.get('MINECRAFT_JAVA_SERVER', ''))
+MINECRAFT_JAVA_SERVER_PORT = int(os.environ.get('MINECRAFT_JAVA_SERVER_PORT', 25565))
+MINECRAFT_JAVA_SERVER = str(os.environ.get('MINECRAFT_SERVER', MINECRAFT_JAVA_SERVER))                # deprecated
+MINECRAFT_JAVA_SERVER_PORT = int(os.environ.get('MINECRAFT_SERVER_PORT', MINECRAFT_JAVA_SERVER_PORT)) # deprecated
+MINECRAFT_JAVA_SERVER_OVERWRITE = str(os.environ.get('MINECRAFT_JAVA_SERVER_OVERWRITE', MINECRAFT_JAVA_SERVER)) # overwrite with DNS or something
 
 MINECRAFT_BEDROCK_SERVER = str(os.environ.get('MINECRAFT_BEDROCK_SERVER', ''))
 MINECRAFT_BEDROCK_SERVER_PORT = int(os.environ.get('MINECRAFT_BEDROCK_SERVER_PORT', 19132))
+MINECRAFT_BEDROCK_SERVER_OVERWRITE = str(os.environ.get('MINECRAFT_BEDROCK_SERVER_OVERWRITE', MINECRAFT_BEDROCK_SERVER)) # overwrite with DNS or something
 
 HTTPD_HOST = str(os.environ.get('HTTP_HOST', '0.0.0.0'))
 HTTPD_PORT = int(os.environ.get('HTTP_PORT', 8080))
 
-print(f"load env: MINECRAFT_SERVER={MINECRAFT_SERVER}:{MINECRAFT_SERVER_PORT} ; MINECRAFT_BEDROCK_SERVER={MINECRAFT_BEDROCK_SERVER}:{MINECRAFT_BEDROCK_SERVER_PORT}")
+print(f"load env: MINECRAFT_JAVA_SERVER={MINECRAFT_JAVA_SERVER}:{MINECRAFT_JAVA_SERVER_PORT} ; MINECRAFT_BEDROCK_SERVER={MINECRAFT_BEDROCK_SERVER}:{MINECRAFT_BEDROCK_SERVER_PORT}")
 
 # healthcheck
 def do_healthcheck(self):
@@ -41,52 +45,56 @@ def do_mcstatus(self):
     #self.send_header('Access-Control-Allow-Origin', '*')
     self.end_headers()
     
-    # mcstatus docs: https://github.com/Dinnerbone/mcstatus
-    # MinecraftServer
-    server = JavaServer.lookup(MINECRAFT_SERVER + ':' + str(MINECRAFT_SERVER_PORT))
-    query = server.query()   # 'query' has to be enabled in a servers' server.properties file.
-    print(f"The Minecraft Java Server has {query.players.online} players online, list: {', '.join(query.players.names)}")
-    PLAYER_ONLINE_NAMES=(f"{', '.join(query.players.names)}")
-    SOFTWARE_PLUGINS=(f"{', '.join(query.software.plugins)}")
-    # MinecraftBedrockServer
-    server = BedrockServer.lookup(MINECRAFT_BEDROCK_SERVER + ':' + str(MINECRAFT_BEDROCK_SERVER_PORT))
-    status = server.status()
-    print(f"The Minecraft Bedrock Server has {status.players_online} players online.")
-
-    # JSON
+    # inital json
     jsondata={}
-    jsondata["java"]= {
-      'hostname': MINECRAFT_SERVER,
-      'port': int(MINECRAFT_SERVER_PORT),
-      'software': {
-        'version': query.software.version,
-        'brand': query.software.brand,
-        'plugins': SOFTWARE_PLUGINS
-      },
-      'players': {
-        'online': int(query.players.online),
-        'max': int(query.players.max),
-        'list': PLAYER_ONLINE_NAMES
-      },
-      'map': query.map,
-      'motd': query.motd
-    }
-    jsondata["bedrock"]= {
-      'hostname': MINECRAFT_BEDROCK_SERVER,
-      'port': int(MINECRAFT_BEDROCK_SERVER_PORT),
-       'software': {
-        'version': status.version.version,
-        'brand': status.version.brand,
-        'protocol': status.version.protocol
-      },
-      'players': {
-        'online': int(status.players_online),
-        'max': int(status.players_max)
-      },
-      'map': status.map,
-      'motd': status.motd,
-      'gamemode': status.gamemode
-    }
+    
+    if(MINECRAFT_JAVA_SERVER and not MINECRAFT_JAVA_SERVER.isspace()):
+        # Minecraft Java Server
+        java_server = JavaServer.lookup(MINECRAFT_JAVA_SERVER + ':' + str(MINECRAFT_JAVA_SERVER_PORT))
+        java_server_query = java_server.query()   # 'query' has to be enabled in a servers' server.properties file.
+        print(f"The Minecraft Java Server has {java_server_query.players.online} players online, list: {', '.join(java_server_query.players.names)}")
+        PLAYER_ONLINE_NAMES=(f"{', '.join(java_server_query.players.names)}")
+        SOFTWARE_PLUGINS=(f"{', '.join(java_server_query.software.plugins)}")
+        
+        jsondata["java"]= {
+          'hostname': MINECRAFT_JAVA_SERVER_OVERWRITE,
+          'port': int(MINECRAFT_JAVA_SERVER_PORT),
+          'software': {
+            'version': java_server_query.software.version,
+            'brand': java_server_query.software.brand,
+            'plugins': SOFTWARE_PLUGINS
+          },
+          'players': {
+            'online': int(java_server_query.players.online),
+            'max': int(java_server_query.players.max),
+            'list': PLAYER_ONLINE_NAMES
+          },
+          'map': java_server_query.map,
+          'motd': java_server_query.motd
+        }
+        
+    if(MINECRAFT_BEDROCK_SERVER and not MINECRAFT_BEDROCK_SERVER.isspace()):
+        # Minecraft Bedrock Server
+        bedrock_server = BedrockServer.lookup(MINECRAFT_BEDROCK_SERVER + ':' + str(MINECRAFT_BEDROCK_SERVER_PORT))
+        bedrock_server_status = bedrock_server.status()
+        print(f"The Minecraft Bedrock Server has {bedrock_server_status.players_online} players online.")
+        
+        jsondata["bedrock"]= {
+          'hostname': MINECRAFT_BEDROCK_SERVER_OVERWRITE,
+          'port': int(MINECRAFT_BEDROCK_SERVER_PORT),
+           'software': {
+            'version': bedrock_server_status.version.version,
+            'brand': bedrock_server_status.version.brand,
+            'protocol': bedrock_server_status.version.protocol
+          },
+          'players': {
+            'online': int(bedrock_server_status.players_online),
+            'max': int(bedrock_server_status.players_max)
+          },
+          'map': bedrock_server_status.map,
+          'motd': bedrock_server_status.motd,
+          'gamemode': bedrock_server_status.gamemode
+        }
     
     # httpd output
     self.wfile.write(json.dumps(jsondata).encode('utf-8'))  
