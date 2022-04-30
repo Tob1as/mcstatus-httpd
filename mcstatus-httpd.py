@@ -7,10 +7,10 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from http import HTTPStatus
 #import ssl
 
-MINECRAFT_SERVER = str(os.environ.get('MINECRAFT_SERVER', 'localhost'))
+MINECRAFT_SERVER = str(os.environ.get('MINECRAFT_SERVER', ''))
 MINECRAFT_SERVER_PORT = int(os.environ.get('MINECRAFT_SERVER_PORT', 25565))
 
-MINECRAFT_BEDROCK_SERVER = str(os.environ.get('MINECRAFT_BEDROCK_SERVER', MINECRAFT_SERVER))
+MINECRAFT_BEDROCK_SERVER = str(os.environ.get('MINECRAFT_BEDROCK_SERVER', ''))
 MINECRAFT_BEDROCK_SERVER_PORT = int(os.environ.get('MINECRAFT_BEDROCK_SERVER_PORT', 19132))
 
 HTTPD_HOST = str(os.environ.get('HTTP_HOST', '0.0.0.0'))
@@ -54,39 +54,38 @@ def do_mcstatus(self):
     print(f"The Minecraft Bedrock Server has {status.players_online} players online.")
 
     # JSON
-    jsondata = {
-      'java': {
-        'hostname': MINECRAFT_SERVER,
-        'port': int(MINECRAFT_SERVER_PORT),
-        'software': {
-          'version': query.software.version,
-          'brand': query.software.brand,
-          'plugins': SOFTWARE_PLUGINS
-        },
-        'players': {
-          'online': int(query.players.online),
-          'max': int(query.players.max),
-          'list': PLAYER_ONLINE_NAMES
-        },
-    	'map': query.map,
-    	'motd': query.motd
+    jsondata={}
+    jsondata["java"]= {
+      'hostname': MINECRAFT_SERVER,
+      'port': int(MINECRAFT_SERVER_PORT),
+      'software': {
+        'version': query.software.version,
+        'brand': query.software.brand,
+        'plugins': SOFTWARE_PLUGINS
       },
-      'bedrock': {
-        'hostname': MINECRAFT_BEDROCK_SERVER,
-        'port': int(MINECRAFT_BEDROCK_SERVER_PORT),
-         'software': {
-          'version': status.version.version,
-          'brand': status.version.brand,
-          'protocol': status.version.protocol
-        },
-        'players': {
-          'online': int(status.players_online),
-          'max': int(status.players_max)
-        },
-        'map': status.map,
-        'motd': status.motd,
-        'gamemode': status.gamemode
-      }
+      'players': {
+        'online': int(query.players.online),
+        'max': int(query.players.max),
+        'list': PLAYER_ONLINE_NAMES
+      },
+      'map': query.map,
+      'motd': query.motd
+    }
+    jsondata["bedrock"]= {
+      'hostname': MINECRAFT_BEDROCK_SERVER,
+      'port': int(MINECRAFT_BEDROCK_SERVER_PORT),
+       'software': {
+        'version': status.version.version,
+        'brand': status.version.brand,
+        'protocol': status.version.protocol
+      },
+      'players': {
+        'online': int(status.players_online),
+        'max': int(status.players_max)
+      },
+      'map': status.map,
+      'motd': status.motd,
+      'gamemode': status.gamemode
     }
     
     # httpd output
