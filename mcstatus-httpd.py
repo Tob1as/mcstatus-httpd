@@ -1,8 +1,8 @@
 import os
 import time
 import json
-from mcstatus import MinecraftServer
-from mcstatus import MinecraftBedrockServer
+from mcstatus import JavaServer
+from mcstatus import BedrockServer
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from http import HTTPStatus
 #import ssl
@@ -43,13 +43,13 @@ def do_mcstatus(self):
     
     # mcstatus docs: https://github.com/Dinnerbone/mcstatus
     # MinecraftServer
-    server = MinecraftServer.lookup(MINECRAFT_SERVER + ':' + str(MINECRAFT_SERVER_PORT))
+    server = JavaServer.lookup(MINECRAFT_SERVER + ':' + str(MINECRAFT_SERVER_PORT))
     query = server.query()   # 'query' has to be enabled in a servers' server.properties file.
-    print(f"The Minecraft Server has {query.players.online} players online, list: {', '.join(query.players.names)}")
+    print(f"The Minecraft Java Server has {query.players.online} players online, list: {', '.join(query.players.names)}")
     PLAYER_ONLINE_NAMES=(f"{', '.join(query.players.names)}")
     SOFTWARE_PLUGINS=(f"{', '.join(query.software.plugins)}")
     # MinecraftBedrockServer
-    server = MinecraftBedrockServer.lookup(MINECRAFT_BEDROCK_SERVER + ':' + str(MINECRAFT_BEDROCK_SERVER_PORT))
+    server = BedrockServer.lookup(MINECRAFT_BEDROCK_SERVER + ':' + str(MINECRAFT_BEDROCK_SERVER_PORT))
     status = server.status()
     print(f"The Minecraft Bedrock Server has {status.players_online} players online.")
 
