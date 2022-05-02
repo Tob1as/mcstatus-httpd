@@ -38,6 +38,7 @@ services:
       #TZ: Europe/Berlin
       MINECRAFT_JAVA_SERVER: minecraft.example.com
       MINECRAFT_JAVA_SERVER_PORT: 25565
+      #MINECRAFT_JAVA_SERVER_PORT_QUERY: 25565  # set, if UDP is not equal to TCP port
       MINECRAFT_BEDROCK_SERVER: minecraft-bedrock.example.com
       MINECRAFT_BEDROCK_SERVER_PORT: 19132
     healthcheck:

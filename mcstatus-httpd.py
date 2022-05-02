@@ -8,19 +8,18 @@ from http import HTTPStatus
 #import ssl
 
 MINECRAFT_JAVA_SERVER = str(os.environ.get('MINECRAFT_JAVA_SERVER', ''))
-MINECRAFT_JAVA_SERVER_PORT = int(os.environ.get('MINECRAFT_JAVA_SERVER_PORT', 25565))
-MINECRAFT_JAVA_SERVER = str(os.environ.get('MINECRAFT_SERVER', MINECRAFT_JAVA_SERVER))                # deprecated
-MINECRAFT_JAVA_SERVER_PORT = int(os.environ.get('MINECRAFT_SERVER_PORT', MINECRAFT_JAVA_SERVER_PORT)) # deprecated
-MINECRAFT_JAVA_SERVER_OVERWRITE = str(os.environ.get('MINECRAFT_JAVA_SERVER_OVERWRITE', MINECRAFT_JAVA_SERVER)) # overwrite with DNS or something
+MINECRAFT_JAVA_SERVER_PORT = int(os.environ.get('MINECRAFT_JAVA_SERVER_PORT', 25565))                                    # TCP Port
+MINECRAFT_JAVA_SERVER_PORT_QUERY = int(os.environ.get('MINECRAFT_JAVA_SERVER_PORT_QUERY', MINECRAFT_JAVA_SERVER_PORT))   # UDP Port
+MINECRAFT_JAVA_SERVER_OVERWRITE = str(os.environ.get('MINECRAFT_JAVA_SERVER_OVERWRITE', MINECRAFT_JAVA_SERVER))          # overwrite with DNS or something
 
 MINECRAFT_BEDROCK_SERVER = str(os.environ.get('MINECRAFT_BEDROCK_SERVER', ''))
-MINECRAFT_BEDROCK_SERVER_PORT = int(os.environ.get('MINECRAFT_BEDROCK_SERVER_PORT', 19132))
+MINECRAFT_BEDROCK_SERVER_PORT = int(os.environ.get('MINECRAFT_BEDROCK_SERVER_PORT', 19132))                              # UDP Port
 MINECRAFT_BEDROCK_SERVER_OVERWRITE = str(os.environ.get('MINECRAFT_BEDROCK_SERVER_OVERWRITE', MINECRAFT_BEDROCK_SERVER)) # overwrite with DNS or something
 
 HTTPD_HOST = str(os.environ.get('HTTP_HOST', '0.0.0.0'))
 HTTPD_PORT = int(os.environ.get('HTTP_PORT', 8080))
 
-print(f"load env: MINECRAFT_JAVA_SERVER={MINECRAFT_JAVA_SERVER}:{MINECRAFT_JAVA_SERVER_PORT} ; MINECRAFT_BEDROCK_SERVER={MINECRAFT_BEDROCK_SERVER}:{MINECRAFT_BEDROCK_SERVER_PORT}")
+print(f"load env: MINECRAFT_JAVA_SERVER={MINECRAFT_JAVA_SERVER}:{MINECRAFT_JAVA_SERVER_PORT_QUERY} ; MINECRAFT_BEDROCK_SERVER={MINECRAFT_BEDROCK_SERVER}:{MINECRAFT_BEDROCK_SERVER_PORT}")
 
 # healthcheck
 def do_healthcheck(self):
@@ -50,7 +49,7 @@ def do_mcstatus(self):
     
     if(MINECRAFT_JAVA_SERVER and not MINECRAFT_JAVA_SERVER.isspace()):
         # Minecraft Java Server
-        java_server = JavaServer.lookup(MINECRAFT_JAVA_SERVER + ':' + str(MINECRAFT_JAVA_SERVER_PORT))
+        java_server = JavaServer.lookup(MINECRAFT_JAVA_SERVER + ':' + str(MINECRAFT_JAVA_SERVER_PORT_QUERY))
         java_server_query = java_server.query()   # 'query' has to be enabled in a servers' server.properties file.
         print(f"The Minecraft Java Server has {java_server_query.players.online} players online, list: {', '.join(java_server_query.players.names)}")
         PLAYER_ONLINE_NAMES=(f"{', '.join(java_server_query.players.names)}")
