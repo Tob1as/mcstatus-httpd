@@ -41,7 +41,7 @@ def do_healthcheck(self):
 def do_mcstatus(self):
     self.send_response(HTTPStatus.OK.value)  # 200
     self.send_header("Content-type", "application/json")
-    #self.send_header('Access-Control-Allow-Origin', '*')
+    self.send_header('Access-Control-Allow-Origin', '*')
     self.end_headers()
     
     # inital json
