@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+#-*- coding: utf-8 -*-
+
 import os
 import time
 import json
@@ -5,7 +8,7 @@ from mcstatus import JavaServer     # mcstatus docs: https://github.com/py-mine/
 from mcstatus import BedrockServer  # mcstatus docs: https://github.com/py-mine/mcstatus
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from http import HTTPStatus
-#import ssl
+import ssl
 
 MINECRAFT_JAVA_SERVER = str(os.environ.get('MINECRAFT_JAVA_SERVER', ''))
 MINECRAFT_JAVA_SERVER_PORT = int(os.environ.get('MINECRAFT_JAVA_SERVER_PORT', 25565))                                    # TCP Port
@@ -18,14 +21,18 @@ MINECRAFT_BEDROCK_SERVER_OVERWRITE = str(os.environ.get('MINECRAFT_BEDROCK_SERVE
 
 HTTPD_HOST = str(os.environ.get('HTTP_HOST', '0.0.0.0'))
 HTTPD_PORT = int(os.environ.get('HTTP_PORT', 8080))
+HTTPD_SSL_ENABLE = int(os.environ.get('HTTPD_SSL_ENABLE', 0))
 
-print(f"load env: MINECRAFT_JAVA_SERVER={MINECRAFT_JAVA_SERVER}:{MINECRAFT_JAVA_SERVER_PORT_QUERY} ; MINECRAFT_BEDROCK_SERVER={MINECRAFT_BEDROCK_SERVER}:{MINECRAFT_BEDROCK_SERVER_PORT}")
+print(f"LOAD ENV: HTTPD_HOST={HTTPD_HOST} ; HTTPD_PORT={HTTPD_PORT} ; HTTPD_SSL_ENABLE={HTTPD_SSL_ENABLE}")
+print(f"LOAD ENV: MINECRAFT_JAVA_SERVER={MINECRAFT_JAVA_SERVER}:{MINECRAFT_JAVA_SERVER_PORT_QUERY} ; MINECRAFT_BEDROCK_SERVER={MINECRAFT_BEDROCK_SERVER}:{MINECRAFT_BEDROCK_SERVER_PORT}")
 
 # healthcheck
 def do_healthcheck(self):
     self.send_response(HTTPStatus.OK.value) # 200
-    self.send_header('Content-type','text/html')
+    #self.send_header('Content-type','text/html')
+    self.send_header('Content-type','text/plain')
     self.end_headers()
+    #self.wfile.write(bytes("It Works!", "utf-8"))
     
     #t = time.localtime()
     #current_time = time.strftime("%Y-%m-%d %H:%M:%S", t)
@@ -112,14 +119,18 @@ class MinecraftStatusServer(BaseHTTPRequestHandler):
 if __name__ == "__main__":        
     httpd = HTTPServer((HTTPD_HOST, HTTPD_PORT), MinecraftStatusServer)
 
-    # https ?
-    #ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    #ctx.set_ciphers('EECDH+AESGCM:EDH+AESGCM')
-    #ctx.check_hostname = False
-    #ctx.load_cert_chain(certfile='ssl.crt', keyfile="ssl.key")
-    #httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
+    # https/ssl
+    if HTTPD_SSL_ENABLE and HTTPD_SSL_ENABLE == 1 and os.path.exists('ssl.crt') and os.path.exists('ssl.key'):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ctx.set_ciphers('EECDH+AESGCM:EDH+AESGCM')
+        ctx.check_hostname = False
+        ctx.load_cert_chain(certfile='ssl.crt', keyfile='ssl.key')
+        httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
+        HTTPD_SCHEME="https"
+    else:
+        HTTPD_SCHEME="http"
 
-    print("Server started http://%s:%s" % (HTTPD_HOST, HTTPD_PORT))
+    print("Server started %s://%s:%s" % (HTTPD_SCHEME, HTTPD_HOST, HTTPD_PORT))
 
     try:
         httpd.serve_forever()
