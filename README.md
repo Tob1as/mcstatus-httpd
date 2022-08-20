@@ -59,6 +59,7 @@ URL: `http://localhost:8080`
 
 ```json
 {
+	"date": "2022-08-20 00:00:00",
 	"java": {
 		"hostname": "minecraft.example.com",
 		"port": 25565,
