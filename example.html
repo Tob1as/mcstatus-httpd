@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MC-Status</title>
+  <meta name="description" content="MC-Status Site">
+  <link rel="shortcut icon" sizes="16x16" href="data:image/x-icon;base64,UklGRkIEAABXRUJQVlA4WAoAAAAwAAAAHwAAHwAASUNDUAwCAAAAAAIMbGNtcwIQAABtbnRyUkdCIFhZWiAH3AABABkAAwApADlhY3NwQVBQTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9tYAAQAAAADTLWxjbXMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAApkZXNjAAAA/AAAAF5jcHJ0AAABXAAAAAt3dHB0AAABaAAAABRia3B0AAABfAAAABRyWFlaAAABkAAAABRnWFlaAAABpAAAABRiWFlaAAABuAAAABRyVFJDAAABzAAAAEBnVFJDAAABzAAAAEBiVFJDAAABzAAAAEBkZXNjAAAAAAAAAANjMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB0ZXh0AAAAAEZCAABYWVogAAAAAAAA9tYAAQAAAADTLVhZWiAAAAAAAAADFgAAAzMAAAKkWFlaIAAAAAAAAG+iAAA49QAAA5BYWVogAAAAAAAAYpkAALeFAAAY2lhZWiAAAAAAAAAkoAAAD4QAALbPY3VydgAAAAAAAAAaAAAAywHJA2MFkghrC/YQPxVRGzQh8SmQMhg7kkYFUXdd7WtwegWJsZp8rGm/fdPD6TD//0FMUEjZAAAAAYCDbdux5cm2bZuba3Jt1uZGG5tt1+Q227Zt2/5+/++3NUbEBADtbH5zLQaAnsG09gHDNsJFUcmlHmHkv8MeHCh4A+b+MKqvjWaM9DDbtX9gNJ9nKtOmW3KH0b0cJkhNImYXQ/nd48pKxuw58YshfqzXAwDJTQzHdACQ3sMjB7fsfzEZXHIAQHITjzQAYHbs+0F1n6cB5KIhG0i+2mxZgapGxjV9s/78QCuTZcMHbScJ8kAvt9vYH7XnchMGQCgVsUfhp8uBHRDrF9xh2HKwMKBndR2s0AI6AQBWUDggLgEAALAHAJ0BKiAAIAA+nUifSyWkIqGoCACwE4lsAJ0yhHmFoDbZ8+3ZHy/YG0oKDqTRD9j+zjPjXMzi/erDlb4D2JN0qJ/eYAAA/vN06k2xoManR3VlxSw2xlQaia/bpBgBJl6/EV6fCUHEppnHrvpYdw9oD59YL+sE6jhyrr9orCyVvka0DjXj6OBYGwQ8jOLNEmP8scsJJ+PvKSJA72pVWsqFh+O8B4FU8ciK1VdMw4aOzkbc6XPt87v3yVRD393tEzTH2enHOv51GYADtr4ZscdsJ+ognrnCNwllIBIl5mVBqBa0b/lwgnIiWgdUIMKUsQQIp4rjZx8955E2wJwmEQdimIeTcN55garsk1plZW2DMuCkBnhLQriCYZ1TchiPSCtxu47SAS4LasxTMNAA" />
+  <!--<link rel="stylesheet" href="styles.css">-->
+  <script src='https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js'></script>
+</head>
+
+<body>
+    <!--<script src="scripts.js"></script>-->
+  
+    <div class="mcstatus"></div>
+
+    <script>
+    $.getJSON('http://example.com:8080/', function(data) {
+
+        var text = `
+		            Java-Hostname: ${data.java.hostname}<br>
+					Java-Online: ${data.java.players.online}<br>
+                    Bedrock-Hostname: ${data.bedrock.hostname}<br>
+                    Bedrock-Online: ${data.bedrock.players.online}
+					`
+
+        $(".mcstatus").html(text);
+    });
+    </script>
+  
+</body>
+</html>
