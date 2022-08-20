@@ -64,7 +64,7 @@ URL: `http://localhost:8080`
 		"hostname": "minecraft.example.com",
 		"port": 25565,
 		"software": {
-			"version": "1.18.1",
+			"version": "1.19.2",
 			"brand": "vanilla",
 			"plugins": ""
 		},
@@ -80,9 +80,9 @@ URL: `http://localhost:8080`
 		"hostname": "minecraft-bedrock.example.com",
 		"port": 19132,
 		"software": {
-			"version": "1.18.11",
+			"version": "1.19.20",
 			"brand": "MCPE",
-			"protocol": "486"
+			"protocol": "544"
 		},
 		"players": {
 			"online": 0,
