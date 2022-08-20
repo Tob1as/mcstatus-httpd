@@ -1,7 +1,17 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 
+"""
+mcstatus-httpd 
+https://github.com/Tob1as/mcstatus-httpd
+
+mcstatus-httpd shows any information of a Minecraft Server via HTTP-Server as JSON.
+It used https://github.com/py-mine/mcstatus
+"""
+
 import os
+import sys
+import logging
 import time
 import json
 from mcstatus import JavaServer     # mcstatus docs: https://github.com/py-mine/mcstatus
@@ -9,6 +19,9 @@ from mcstatus import BedrockServer  # mcstatus docs: https://github.com/py-mine/
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from http import HTTPStatus
 import ssl
+
+# Variables
+LOGLEVEL = str(os.environ.get('LOGLEVEL', 'INFO').upper())
 
 MINECRAFT_JAVA_SERVER = str(os.environ.get('MINECRAFT_JAVA_SERVER', ''))
 MINECRAFT_JAVA_SERVER_PORT = int(os.environ.get('MINECRAFT_JAVA_SERVER_PORT', 25565))                                    # TCP Port
@@ -23,26 +36,26 @@ HTTPD_HOST = str(os.environ.get('HTTP_HOST', '0.0.0.0'))
 HTTPD_PORT = int(os.environ.get('HTTP_PORT', 8080))
 HTTPD_SSL_ENABLE = int(os.environ.get('HTTPD_SSL_ENABLE', 0))
 
-print(f"LOAD ENV: HTTPD_HOST={HTTPD_HOST} ; HTTPD_PORT={HTTPD_PORT} ; HTTPD_SSL_ENABLE={HTTPD_SSL_ENABLE}")
-print(f"LOAD ENV: MINECRAFT_JAVA_SERVER={MINECRAFT_JAVA_SERVER}:{MINECRAFT_JAVA_SERVER_PORT_QUERY} ; MINECRAFT_BEDROCK_SERVER={MINECRAFT_BEDROCK_SERVER}:{MINECRAFT_BEDROCK_SERVER_PORT}")
+# Logging
+logging.root.handlers = []
+logging.basicConfig(format='%(asctime)s %(name)-12s %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S', encoding='utf-8', stream=sys.stdout, level=LOGLEVEL)
+logger = logging.getLogger(__name__)
+
+logger.info(f"LOAD ENV: HTTPD_HOST={HTTPD_HOST} ; HTTPD_PORT={HTTPD_PORT} ; HTTPD_SSL_ENABLE={HTTPD_SSL_ENABLE}")
+logger.info(f"LOAD ENV: MINECRAFT_JAVA_SERVER={MINECRAFT_JAVA_SERVER}:{MINECRAFT_JAVA_SERVER_PORT_QUERY} ; MINECRAFT_BEDROCK_SERVER={MINECRAFT_BEDROCK_SERVER}:{MINECRAFT_BEDROCK_SERVER_PORT}")
+
+# current time
+def currenttime():
+    t = time.localtime()
+    current_time = time.strftime("%Y-%m-%d %H:%M:%S", t)
+    return current_time
 
 # healthcheck
 def do_healthcheck(self):
     self.send_response(HTTPStatus.OK.value) # 200
-    #self.send_header('Content-type','text/html')
     self.send_header('Content-type','text/plain')
     self.end_headers()
     #self.wfile.write(bytes("It Works!", "utf-8"))
-    
-    #t = time.localtime()
-    #current_time = time.strftime("%Y-%m-%d %H:%M:%S", t)
-    ##print(f"healthcheck call at {current_time}.")
-    
-    #self.wfile.write(bytes("<html><head><title>Minecraft Status: healthcheck</title></head>", "utf-8"))
-    #self.wfile.write(bytes("<body>", "utf-8"))
-    #self.wfile.write(bytes(f"<b> It works !</b> <br><br>Current time: {current_time}", "utf-8"))
-    ##self.wfile.write(bytes("<p>Request: %s</p>" % self.path, "utf-8"))
-    #self.wfile.write(bytes("</body></html>", "utf-8"))
 
 # mc status as json
 def do_mcstatus(self):
@@ -52,13 +65,15 @@ def do_mcstatus(self):
     self.end_headers()
     
     # inital json
-    jsondata={}
+    jsondata={
+      'date': currenttime()
+    }
     
     if(MINECRAFT_JAVA_SERVER and not MINECRAFT_JAVA_SERVER.isspace()):
         # Minecraft Java Server
         java_server = JavaServer.lookup(MINECRAFT_JAVA_SERVER + ':' + str(MINECRAFT_JAVA_SERVER_PORT_QUERY))
         java_server_query = java_server.query()   # 'query' has to be enabled in a servers' server.properties file.
-        print(f"The Minecraft Java Server has {java_server_query.players.online} players online, list: {', '.join(java_server_query.players.names)}")
+        logger.info(f"The Minecraft Java Server has {java_server_query.players.online} players online, list: {', '.join(java_server_query.players.names)}")
         PLAYER_ONLINE_NAMES=(f"{', '.join(java_server_query.players.names)}")
         SOFTWARE_PLUGINS=(f"{', '.join(java_server_query.software.plugins)}")
         
@@ -83,7 +98,7 @@ def do_mcstatus(self):
         # Minecraft Bedrock Server
         bedrock_server = BedrockServer.lookup(MINECRAFT_BEDROCK_SERVER + ':' + str(MINECRAFT_BEDROCK_SERVER_PORT))
         bedrock_server_status = bedrock_server.status()
-        print(f"The Minecraft Bedrock Server has {bedrock_server_status.players_online} players online.")
+        logger.info(f"The Minecraft Bedrock Server has {bedrock_server_status.players_online} players online.")
         
         jsondata["bedrock"]= {
           'hostname': MINECRAFT_BEDROCK_SERVER_OVERWRITE,
@@ -110,8 +125,6 @@ class MinecraftStatusServer(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == '/healthcheck':
             do_healthcheck(self)
-        #elif self.path == '/test':
-        #    do_test(self)
         else:
             do_mcstatus(self)
       
@@ -130,7 +143,7 @@ if __name__ == "__main__":
     else:
         HTTPD_SCHEME="http"
 
-    print("Server started %s://%s:%s" % (HTTPD_SCHEME, HTTPD_HOST, HTTPD_PORT))
+    logger.info("Server started %s://%s:%s" % (HTTPD_SCHEME, HTTPD_HOST, HTTPD_PORT))
 
     try:
         httpd.serve_forever()
@@ -138,4 +151,4 @@ if __name__ == "__main__":
         pass
 
     httpd.server_close()
-    print("Server stopped.")
+    logger.info("Server stopped.")
