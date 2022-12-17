@@ -15,7 +15,7 @@ I use Minecraft Server with Docker:
 * [Minecraft Java Edition](https://github.com/itzg/docker-minecraft-server)
 * [Minecraft Bedrock Edition](https://github.com/itzg/docker-minecraft-bedrock-server)
 
-Examples for docker-compose (minecraft.yml, minecraft-bedrock.yml) you can find here: [click](https://github.com/Tob1asDocker/Collection/tree/master/docker-compose_examples)
+Examples for docker-compose (minecraft.yml, minecraft-bedrock.yml) you can find here: [click](https://github.com/Tob1as/docker-kubernetes-collection/tree/master/examples_docker-compose)
 
 ### Requirements
 
