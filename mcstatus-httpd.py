@@ -98,21 +98,21 @@ def do_mcstatus(self):
         # Minecraft Bedrock Server
         bedrock_server = BedrockServer.lookup(MINECRAFT_BEDROCK_SERVER + ':' + str(MINECRAFT_BEDROCK_SERVER_PORT))
         bedrock_server_status = bedrock_server.status()
-        logger.info(f"The Minecraft Bedrock Server has {bedrock_server_status.players_online} players online.")
+        logger.info(f"The Minecraft Bedrock Server has {bedrock_server_status.players.online} players online.")
         
         jsondata["bedrock"]= {
           'hostname': MINECRAFT_BEDROCK_SERVER_OVERWRITE,
           'port': int(MINECRAFT_BEDROCK_SERVER_PORT),
            'software': {
-            'version': bedrock_server_status.version.version,
+            'version': bedrock_server_status.version.name,
             'brand': bedrock_server_status.version.brand,
             'protocol': bedrock_server_status.version.protocol
           },
           'players': {
-            'online': int(bedrock_server_status.players_online),
-            'max': int(bedrock_server_status.players_max)
+            'online': int(bedrock_server_status.players.online),
+            'max': int(bedrock_server_status.players.max)
           },
-          'map': bedrock_server_status.map,
+          'map': bedrock_server_status.map_name,
           'motd': bedrock_server_status.motd.raw,
           'gamemode': bedrock_server_status.gamemode
         }
