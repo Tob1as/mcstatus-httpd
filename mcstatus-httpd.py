@@ -91,7 +91,7 @@ def do_mcstatus(self):
             'list': PLAYER_ONLINE_NAMES
           },
           'map': java_server_query.map,
-          'motd': java_server_query.motd
+          'motd': java_server_query.motd.raw
         }
         
     if(MINECRAFT_BEDROCK_SERVER and not MINECRAFT_BEDROCK_SERVER.isspace()):
@@ -113,7 +113,7 @@ def do_mcstatus(self):
             'max': int(bedrock_server_status.players_max)
           },
           'map': bedrock_server_status.map,
-          'motd': bedrock_server_status.motd,
+          'motd': bedrock_server_status.motd.raw,
           'gamemode': bedrock_server_status.gamemode
         }
     
