@@ -41,11 +41,6 @@ services:
       #MINECRAFT_JAVA_SERVER_PORT_QUERY: 25565  # set, if UDP is not equal to TCP port
       MINECRAFT_BEDROCK_SERVER: minecraft-bedrock.example.com
       MINECRAFT_BEDROCK_SERVER_PORT: 19132
-    healthcheck:
-      test:  wget --quiet --tries=1 --spider http://localhost:8080/healthcheck || exit 1
-      interval: 120s
-      timeout: 3s
-      retries: 3
 ```
 
 local:
