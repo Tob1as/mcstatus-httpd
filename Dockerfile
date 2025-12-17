@@ -1,4 +1,7 @@
-FROM python:3.13-alpine
+FROM python:3.14-alpine
+
+ARG BUILD_DATE
+ARG VCS_REF
 
 LABEL org.opencontainers.image.authors="Tobias Hargesheimer <docker@ison.ws>" \
 	#org.opencontainers.image.version="${VCS_REF}" \
