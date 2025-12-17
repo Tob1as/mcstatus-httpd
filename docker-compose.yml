@@ -25,10 +25,10 @@ services:
       #MINECRAFT_BEDROCK_SERVER_OVERWRITE: minecraft-bedrock.example.com
     #entrypoint: [ "/bin/sh", "-c", "--" ]
     #command: [ "while true; do sleep 60; done;" ]
-    healthcheck:
-      test:  wget --quiet --tries=1 --spider http://localhost:8080/healthcheck || exit 1
-      #test:  wget --quiet --tries=1 --spider --no-check-certificate  https://localhost:8443/healthcheck || exit 1
-      #start_period: 10s
-      interval: 120s
-      timeout: 3s
-      retries: 3
+    #healthcheck:  # NOT work with Distroless Image, works only with Alpine!
+    #  test:  wget --quiet --tries=1 --spider http://localhost:8080/healthcheck || exit 1
+    #  #test:  wget --quiet --tries=1 --spider --no-check-certificate  https://localhost:8443/healthcheck || exit 1
+    #  #start_period: 10s
+    #  interval: 120s
+    #  timeout: 3s
+    #  retries: 3
