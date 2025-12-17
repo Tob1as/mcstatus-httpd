@@ -73,8 +73,8 @@ def do_mcstatus(self):
         # Minecraft Java Server
         java_server = JavaServer.lookup(MINECRAFT_JAVA_SERVER + ':' + str(MINECRAFT_JAVA_SERVER_PORT_QUERY))
         java_server_query = java_server.query()   # 'query' has to be enabled in a servers' server.properties file.
-        logger.info(f"The Minecraft Java Server has {java_server_query.players.online} players online, list: {', '.join(java_server_query.players.names)}")
-        PLAYER_ONLINE_NAMES=(f"{', '.join(java_server_query.players.names)}")
+        logger.info(f"The Minecraft Java Server has {java_server_query.players.online} players online, list: {', '.join(java_server_query.players.list)}")
+        PLAYER_ONLINE_NAMES=(f"{', '.join(java_server_query.players.list)}")
         SOFTWARE_PLUGINS=(f"{', '.join(java_server_query.software.plugins)}")
         
         jsondata["java"]= {
@@ -90,7 +90,7 @@ def do_mcstatus(self):
             'max': int(java_server_query.players.max),
             'list': PLAYER_ONLINE_NAMES
           },
-          'map': java_server_query.map,
+          'map': java_server_query.map_name,
           'motd': java_server_query.motd.raw
         }
         
