@@ -153,6 +153,11 @@ LOG_LEVELS: Final = ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
 TRUE_VALUES: Final = frozenset({"1", "true", "yes", "on"})
 FALSE_VALUES: Final = frozenset({"0", "false", "no", "off"})
 
+# Link to the source code in the status JSON ("sourcecode"), see collect_status().
+# Not documented: MCSTATUS_HTTPD_SOURCECODE=0 removes it from the output.
+SOURCE_CODE_URL: Final = "https://github.com/Tob1as/mcstatus-httpd"
+SHOW_SOURCE_CODE: Final = os.environ.get("MCSTATUS_HTTPD_SOURCECODE", "").strip().lower() not in FALSE_VALUES
+
 type IPAddress = ipaddress.IPv4Address | ipaddress.IPv6Address
 type IPNetwork = ipaddress.IPv4Network | ipaddress.IPv6Network
 
@@ -1001,6 +1006,10 @@ def collect_status(settings: Settings) -> dict[str, Any]:
     #        "sizes": list(settings.avatar_allowed_sizes),
     #        "path": f"{settings.http_prefix}/avatar/",
     #    }
+
+    # Link to the source code, comment out these two lines to remove it.
+    if SHOW_SOURCE_CODE:
+        result["sourcecode"] = SOURCE_CODE_URL
     return result
 
 
