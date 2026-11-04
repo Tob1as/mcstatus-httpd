@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MC-Status</title>
+    <meta name="description" content="MC-Status Site">
+    <link rel="shortcut icon" sizes="16x16" href="data:image/x-icon;base64,UklGRkIEAABXRUJQVlA4WAoAAAAwAAAAHwAAHwAASUNDUAwCAAAAAAIMbGNtcwIQAABtbnRyUkdCIFhZWiAH3AABABkAAwApADlhY3NwQVBQTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9tYAAQAAAADTLWxjbXMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAApkZXNjAAAA/AAAAF5jcHJ0AAABXAAAAAt3dHB0AAABaAAAABRia3B0AAABfAAAABRyWFlaAAABkAAAABRnWFlaAAABpAAAABRiWFlaAAABuAAAABRyVFJDAAABzAAAAEBnVFJDAAABzAAAAEBiVFJDAAABzAAAAEBkZXNjAAAAAAAAAANjMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB0ZXh0AAAAAEZCAABYWVogAAAAAAAA9tYAAQAAAADTLVhZWiAAAAAAAAADFgAAAzMAAAKkWFlaIAAAAAAAAG+iAAA49QAAA5BYWVogAAAAAAAAYpkAALeFAAAY2lhZWiAAAAAAAAAkoAAAD4QAALbPY3VydgAAAAAAAAAaAAAAywHJA2MFkghrC/YQPxVRGzQh8SmQMhg7kkYFUXdd7WtwegWJsZp8rGm/fdPD6TD//0FMUEjZAAAAAYCDbdux5cm2bZuba3Jt1uZGG5tt1+Q227Zt2/5+/++3NUbEBADtbH5zLQaAnsG09gHDNsJFUcmlHmHkv8MeHCh4A+b+MKqvjWaM9DDbtX9gNJ9nKtOmW3KH0b0cJkhNImYXQ/nd48pKxuw58YshfqzXAwDJTQzHdACQ3sMjB7fsfzEZXHIAQHITjzQAYHbs+0F1n6cB5KIhG0i+2mxZgapGxjV9s/78QCuTZcMHbScJ8kAvt9vYH7XnchMGQCgVsUfhp8uBHRDrF9xh2HKwMKBndR2s0AI6AQBWUDggLgEAALAHAJ0BKiAAIAA+nUifSyWkIqGoCACwE4lsAJ0yhHmFoDbZ8+3ZHy/YG0oKDqTRD9j+zjPjXMzi/erDlb4D2JN0qJ/eYAAA/vN06k2xoManR3VlxSw2xlQaia/bpBgBJl6/EV6fCUHEppnHrvpYdw9oD59YL+sE6jhyrr9orCyVvka0DjXj6OBYGwQ8jOLNEmP8scsJJ+PvKSJA72pVWsqFh+O8B4FU8ciK1VdMw4aOzkbc6XPt87v3yVRD393tEzTH2enHOv51GYADtr4ZscdsJ+ognrnCNwllIBIl5mVBqBa0b/lwgnIiWgdUIMKUsQQIp4rjZx8955E2wJwmEQdimIeTcN55garsk1plZW2DMuCkBnhLQriCYZ1TchiPSCtxu47SAS4LasxTMNAA" />
+    <!--<link rel="stylesheet" href="styles.css">-->
+    <style>
+    /* Page style, adjust as you like. */
+    body { margin: 20px; font-family: system-ui, "Segoe UI", Arial, sans-serif; font-size: 14px; color: #3a3a3d; }
+    .mcstatusBox { max-width: 360px; padding: 15px 20px; background: #ecf1f7; }
+
+    /* CSS classes the status box uses from WSC (see wsc-box.html),
+       defined here so the same box code works on any website. */
+    dl.plain.dataList { display: grid; grid-template-columns: auto 1fr; column-gap: 15px; row-gap: 2px; margin: 0; }
+    dl.plain.dataList dt { color: #7d8287; }
+    dl.plain.dataList dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
+    .badge { display: inline-block; padding: 1px 6px; border-radius: 2px; font-size: 12px; line-height: 1.5; color: #fff; background: #7d8287; }
+    .badge.label.green { background: #008000; }
+    .badge.label.red { background: #c00; }
+    </style>
+</head>
+
+<body>
+    <!--<script src="scripts.js"></script>-->
+
+<!--
+    Minecraft server status box (mcstatus-httpd), same code as wsc-box.html.
+    https://github.com/Tob1as/mcstatus-httpd
+
+    Customizing:
+      - Adjust MCSTATUS_URL in the script below.
+        Optional settings there: REFRESH_SECONDS, DATE_FORMAT, SHOW_AVATARS, AVATAR_TYPE, AVATAR_SIZE and TEXT.
+      - Remove a whole <section> if you do not run that server (Java or Bedrock).
+      - Remove any <dt>/<dd> pair you do not need, the script skips missing fields.
+      - Translate the labels (<dt>) and the TEXT values in the script.
+      - Fields without a value (e.g. empty player list) are hidden automatically.
+-->
+<style>
+.mcstatusBox [hidden] { display: none !important; }
+.mcstatusBox .mcstatusServer + .mcstatusServer { margin-top: 15px; }
+.mcstatusBox .mcstatusTitle { font-size: inherit; font-weight: 600; margin: 0 0 5px; }
+.mcstatusBox [data-field="motd"] { white-space: pre-line; }
+.mcstatusBox .mcstatusUpdated { margin-top: 10px; font-size: smaller; opacity: .7; }
+/* Player avatars, the name is shown as tooltip on mouse over and on tap (focus). */
+.mcstatusBox .mcstatusAvatars { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: flex-end; gap: 4px; }
+.mcstatusBox .mcstatusAvatar { position: relative; margin: 0; padding: 0; border: 0; background: none; box-shadow: none; cursor: pointer; line-height: 0; appearance: none; }
+.mcstatusBox .mcstatusAvatar img { display: block; width: auto; image-rendering: pixelated; }
+.mcstatusBox .mcstatusAvatar::after { content: attr(data-name); position: absolute; bottom: calc(100% + 4px); right: 0; padding: 2px 6px; border-radius: 3px; background: rgba(0, 0, 0, .8); color: #fff; font-size: 12px; line-height: 1.4; white-space: nowrap; pointer-events: none; visibility: hidden; z-index: 10; }
+.mcstatusBox .mcstatusAvatar:hover::after, .mcstatusBox .mcstatusAvatar:focus::after { visibility: visible; }
+</style>
+
+<div class="mcstatusBox">
+    <p class="mcstatusMessage">Loading ...</p>
+
+    <!-- Minecraft Java Edition -->
+    <section class="mcstatusServer" data-server="java" hidden>
+        <h3 class="mcstatusTitle">Java Edition</h3>
+        <dl class="plain dataList">
+            <dt>Status</dt>      <dd data-field="status"></dd>
+            <dt>Address</dt>     <dd data-field="address"></dd>
+            <dt>Port</dt>        <dd data-field="port"></dd>
+            <dt>Players</dt>     <dd data-field="players"></dd>
+            <dt>Player list</dt> <dd data-field="playerList"></dd>
+            <dt>Version</dt>     <dd data-field="version"></dd>
+            <dt>Software</dt>    <dd data-field="brand"></dd>
+            <dt>Plugins</dt>     <dd data-field="plugins"></dd>
+            <dt>Map</dt>         <dd data-field="map"></dd>
+            <dt>MOTD</dt>        <dd data-field="motd"></dd>
+        </dl>
+    </section>
+
+    <!-- Minecraft Bedrock Edition -->
+    <section class="mcstatusServer" data-server="bedrock" hidden>
+        <h3 class="mcstatusTitle">Bedrock Edition</h3>
+        <dl class="plain dataList">
+            <dt>Status</dt>      <dd data-field="status"></dd>
+            <dt>Address</dt>     <dd data-field="address"></dd>
+            <dt>Port</dt>        <dd data-field="port"></dd>
+            <dt>Players</dt>     <dd data-field="players"></dd>
+            <dt>Version</dt>     <dd data-field="version"></dd>
+            <dt>Game mode</dt>   <dd data-field="gamemode"></dd>
+            <dt>Map</dt>         <dd data-field="map"></dd>
+            <dt>MOTD</dt>        <dd data-field="motd"></dd>
+        </dl>
+    </section>
+
+    <!-- Time of the last query -->
+    <p class="mcstatusUpdated" hidden>Last update: <span data-field="date"></span></p>
+</div>
+<script>
+(() => {
+    // ---- Configuration -----------------------------------------------------
+    // URL of mcstatus-httpd, including HTTP_PREFIX if used, e.g.
+    // 'https://example.com/mcstatus' (must be HTTPS if this page uses HTTPS).
+    const MCSTATUS_URL = 'http://example.com:8080/';
+    // Reload the status every X seconds, 0 = load only once.
+    const REFRESH_SECONDS = 60;
+    // Date format of "Last update" (shown in the local time of the visitor):
+    //   ''      = language of the page (<html lang="...">), otherwise of the browser
+    //   'de-DE' = fixed language, e.g. 'de-DE' -> 03.11.2026, 22:49 / 'en-US' -> 11/03/2026, 10:49 PM
+    //   'iso'   = 2026-11-03 22:49
+    const DATE_FORMAT = '';
+    // Show avatars instead of player names (Java), only works if mcstatus-httpd
+    // provides them (AVATAR_ENABLE), otherwise the names are shown as text.
+    const SHOW_AVATARS = true;
+    // Avatar type: '' = default of mcstatus-httpd (AVATAR_TYPE), 'head' or 'body'.
+    // Only used if mcstatus-httpd allows it (AVATAR_ALLOWED_TYPES), otherwise its default.
+    const AVATAR_TYPE = '';
+    // Height of a head avatar in pixels, body avatars are 2.5 times as high.
+    const AVATAR_SIZE = 20;
+    // Texts generated by the script, translate if needed.
+    const TEXT = {
+        online: 'Online',
+        offline: 'Offline',
+        error: 'Status currently not available.',
+        noServer: 'No server configured.',
+    };
+    // ------------------------------------------------------------------------
+
+    // This script must be placed directly after <div class="mcstatusBox">,
+    // so several boxes can be used on the same page.
+    const box = document.currentScript?.previousElementSibling;
+    if (!box?.classList.contains('mcstatusBox')) {
+        console.error('mcstatus: <div class="mcstatusBox"> must be placed directly before the script.');
+        return;
+    }
+    const message = box.querySelector('.mcstatusMessage');
+    const updated = box.querySelector('.mcstatusUpdated');
+    // Avatars are loaded relative to MCSTATUS_URL, e.g. '/mcstatus' -> '/mcstatus/avatar/<name>'.
+    const avatarBase = new URL(MCSTATUS_URL.endsWith('/') ? MCSTATUS_URL : `${MCSTATUS_URL}/`, document.baseURI);
+
+    // Write a value into a field and show it together with its label (<dt>).
+    // Empty values hide field and label, missing fields are skipped.
+    // textContent is used instead of innerHTML, so values from the Minecraft
+    // server (MOTD, player names) cannot inject HTML into the page.
+    const setField = (parent, name, value) => {
+        const field = parent.querySelector(`[data-field="${name}"]`);
+        if (!field) {
+            return;
+        }
+        const empty = value === null || value === undefined || value === ''
+            || (Array.isArray(value) && value.length === 0);
+        const label = field.tagName === 'DD' ? field.previousElementSibling : null;
+        field.hidden = empty;
+        if (label) {
+            label.hidden = empty;
+        }
+        if (empty) {
+            return;
+        }
+        if (value instanceof Node) {
+            field.replaceChildren(value);
+        } else {
+            field.textContent = Array.isArray(value) ? value.join(', ') : String(value);
+        }
+    };
+
+    // Status badge (green = online, red = offline).
+    const statusBadge = (online) => {
+        const badge = document.createElement('span');
+        badge.className = `badge label ${online ? 'green' : 'red'}`;
+        badge.textContent = online ? TEXT.online : TEXT.offline;
+        return badge;
+    };
+
+    // Format a date according to DATE_FORMAT.
+    const formatDate = (date) => {
+        if (DATE_FORMAT === 'iso') {
+            const pad = (number) => String(number).padStart(2, '0');
+            return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} `
+                + `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+        }
+        const locale = DATE_FORMAT || document.documentElement.lang || undefined;
+        const options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' };
+        try {
+            return date.toLocaleString(locale, options);
+        } catch {
+            return date.toLocaleString(undefined, options);  // invalid language -> browser language
+        }
+    };
+
+    const showMessage = (text) => {
+        if (message) {
+            message.textContent = text;
+            message.hidden = !text;
+        }
+    };
+
+    // Player list as avatars (if enabled in mcstatus-httpd and SHOW_AVATARS) or as names.
+    // "avatar" is the avatar info of the JSON, e.g. {"type": "head", "types": ["head", "body"], "path": "/mcstatus/avatar/"}.
+    const playerList = (names, avatar) => {
+        if (!SHOW_AVATARS || !avatar || !Array.isArray(names) || names.length === 0) {
+            return names;
+        }
+        const type = AVATAR_TYPE && (avatar.types || []).includes(AVATAR_TYPE) ? AVATAR_TYPE : avatar.type;
+        const height = type === 'body' ? Math.round(AVATAR_SIZE * 2.5) : AVATAR_SIZE;
+        const list = document.createElement('span');
+        list.className = 'mcstatusAvatars';
+        for (const name of names) {
+            // A button can get the focus, so the tooltip (CSS) also appears on tap.
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'mcstatusAvatar';
+            button.dataset.name = name;
+            button.setAttribute('aria-label', name);
+
+            const image = document.createElement('img');
+            // The type is always sent: browsers cache avatars per URL, so a changed
+            // default type of mcstatus-httpd does not show cached avatars of the other type.
+            image.src = new URL(`avatar/${encodeURIComponent(name)}?type=${encodeURIComponent(type)}`, avatarBase).href;
+            image.alt = name;
+            image.height = height;
+            image.loading = 'lazy';
+            // No avatar available: show the name as text instead (own element, so the gap stays).
+            image.addEventListener('error', () => {
+                const text = document.createElement('span');
+                text.textContent = name;
+                button.replaceWith(text);
+            }, { once: true });
+
+            button.append(image);
+            list.append(button);
+        }
+        return list;
+    };
+
+    const renderServer = (type, server, avatar) => {
+        const section = box.querySelector(`[data-server="${type}"]`);
+        if (!section) {
+            return;  // section removed from the HTML
+        }
+        section.hidden = !server;  // server not configured in mcstatus-httpd
+        if (!server) {
+            return;
+        }
+
+        const online = server.online === true;
+        const players = server.players ?? {};
+        const software = server.software ?? {};
+
+        setField(section, 'status', statusBadge(online));
+        setField(section, 'address', server.hostname);
+        setField(section, 'port', server.port);
+        // All other values are only available while the server is online.
+        setField(section, 'players', online ? `${players.online} / ${players.max}` : null);
+        setField(section, 'playerList', online ? playerList(players.list, avatar) : null);
+        setField(section, 'version', online ? software.version : null);
+        setField(section, 'brand', online ? software.brand : null);
+        setField(section, 'plugins', online ? software.plugins : null);
+        setField(section, 'gamemode', online ? server.gamemode : null);
+        setField(section, 'map', online ? server.map : null);
+        setField(section, 'motd', online ? server.motd : null);
+    };
+
+    const update = async () => {
+        try {
+            const response = await fetch(MCSTATUS_URL, {
+                cache: 'no-store',
+                signal: AbortSignal.timeout(15000),
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            const data = await response.json();
+
+            // Avatar info of the JSON disabled, fixed values instead.
+            //renderServer('java', data.java, data.avatar);
+            //renderServer('bedrock', data.bedrock, data.avatar);
+            const avatar = { type: 'head', types: ['head', 'body'] };
+            renderServer('java', data.java, avatar);
+            renderServer('bedrock', data.bedrock, avatar);
+
+            showMessage(data.java || data.bedrock ? '' : TEXT.noServer);
+
+            if (updated) {
+                const date = new Date(data.date);
+                const formatted = Number.isNaN(date.getTime()) ? null : formatDate(date);
+                setField(updated, 'date', formatted);
+                updated.hidden = !formatted;
+            }
+        } catch (error) {
+            box.querySelectorAll('.mcstatusServer').forEach((section) => {
+                section.hidden = true;
+            });
+            if (updated) {
+                updated.hidden = true;
+            }
+            showMessage(TEXT.error);
+            console.error('mcstatus:', error);
+        }
+    };
+
+    update();
+    if (REFRESH_SECONDS > 0) {
+        setInterval(update, REFRESH_SECONDS * 1000);
+    }
+})();
+</script>
+
+</body>
+</html>

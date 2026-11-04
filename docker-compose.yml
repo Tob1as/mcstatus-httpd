@@ -1,34 +1,65 @@
-version: '2.4'
 services:
 
   mcstatus-httpd:
     #build:
+    #  args:
+    #    - VCS_REF=${VCS_REF:-unknown}
+    #    - BUILD_DATE=${BUILD_DATE:-unknown}
+    #    - VERSION=${VERSION:-dev}
     #  context: ./
     #  dockerfile: Dockerfile
+    #  target: production
     image: ghcr.io/tob1as/mcstatus-httpd:latest
     container_name: mcstatus-httpd
     restart: unless-stopped
     ports:
       - 8080:8080/tcp
     #volumes:
-    #  - ./mcstatus-httpd.py:/service/mcstatus-httpd.py:rw
-    #  #- ./ssl/ssl.crt:/service/ssl.crt:ro
-    #  #- ./ssl/ssl.crt:/service/ssl.key:ro
+    #  - ./mcstatus-httpd.py:/app/mcstatus-httpd.py:ro
+    #  - ./ssl/ssl.crt:/app/ssl.crt:ro
+    #  - ./ssl/ssl.key:/app/ssl.key:ro
+    #  - mcstatus-avatars:/tmp/mcstatus-httpd/avatars:rw  # with AVATAR_CACHE_TYPE: file, keeps avatars when the container is recreated
     environment:
-      TZ: Europe/Berlin
-      MINECRAFT_JAVA_SERVER: minecraft
+      #TZ: Europe/Berlin
+      # Demo servers of https://mcstatus.io - replace with your own servers.
+      MINECRAFT_JAVA_SERVER: demo.mcstatus.io
       MINECRAFT_JAVA_SERVER_PORT: 25565
-      #MINECRAFT_JAVA_SERVER_PORT_QUERY: 25565  # set, if UDP is not equal to TCP port
+      #MINECRAFT_JAVA_SERVER_PORT_QUERY: 25565  # set, if UDP (query) is not equal to TCP port
       #MINECRAFT_JAVA_SERVER_OVERWRITE: minecraft.example.com
-      MINECRAFT_BEDROCK_SERVER: minecraft-bedrock
+      MINECRAFT_BEDROCK_SERVER: demo.mcstatus.io
       MINECRAFT_BEDROCK_SERVER_PORT: 19132
       #MINECRAFT_BEDROCK_SERVER_OVERWRITE: minecraft-bedrock.example.com
-    #entrypoint: [ "/bin/sh", "-c", "--" ]
-    #command: [ "while true; do sleep 60; done;" ]
-    #healthcheck:  # NOT work with Distroless Image, works only with Alpine!
-    #  test:  wget --quiet --tries=1 --spider http://localhost:8080/healthcheck || exit 1
-    #  #test:  wget --quiet --tries=1 --spider --no-check-certificate  https://localhost:8443/healthcheck || exit 1
-    #  #start_period: 10s
-    #  interval: 120s
-    #  timeout: 3s
-    #  retries: 3
+      #MINECRAFT_BEDROCK_TRANSPORT: auto  # nethernet (TCP, Bedrock >= 1.26.50), raknet (UDP, legacy) or auto (both)
+      #MINECRAFT_TIMEOUT: 3        # seconds until a server counts as offline
+      #CACHE_TTL: 10               # seconds a result is reused, 0 = query on every request
+      #HTTP_HOST: "::"             # listen on IPv4 + IPv6 (default 0.0.0.0 = IPv4 only)
+      #HTTP_PREFIX: mcstatus       # -> http://localhost:8080/mcstatus
+      #HTTP_CORS_ORIGIN: "*"       # websites allowed to load the status, e.g. https://forum.example.com,https://example.com
+      #HTTP_TRUSTED_PROXIES: "172.18.0.0/16, 10.0.0.5, fd00:dead:beef::/48, ::1"  # reverse proxies (IPv4/IPv6 networks or IPs), client IP from X-Forwarded-For in the log
+      #HTTPD_SSL_ENABLE: 1
+      #SSL_CERTFILE: ssl.crt
+      #SSL_KEYFILE: ssl.key
+      #AVATAR_ENABLE: 1                     # player avatars (Java) at <prefix>/avatar/<name>, loaded and cached by mcstatus-httpd
+      #AVATAR_TYPE: head                    # default type: head or body
+      #AVATAR_IMAGE_SIZE: 64                # default image width in pixels loaded from the providers (8-300)
+      #AVATAR_ALLOWED_TYPES: head,body      # types allowed via ?type=
+      #AVATAR_ALLOWED_SIZES: 16,32,48,64,96,128,192,256,300  # sizes allowed via ?size=
+      #AVATAR_PROVIDERS: mc-heads,minotar   # order of preference (fallback), or own URL templates with {name} and {size}, optional "head="/"body=" prefix
+      #AVATAR_CACHE_TTL: 3600               # seconds until an avatar is loaded again (the old one is kept if that fails)
+      #AVATAR_CACHE_TYPE: memory            # memory or file (see volumes)
+      #AVATAR_CACHE_DIR: /tmp/mcstatus-httpd/avatars
+      #AVATAR_CACHE_MAX_ENTRIES: 500        # 0 = unlimited
+      #AVATAR_TLS_VERIFY: 0                 # accept self-signed HTTPS certificates of own URL templates
+      #AVATAR_ONLINE_ONLY: 0                # serve avatars of any player name, not only of online players
+      #LOGLEVEL: INFO
+    # Works with the distroless and the alpine image, no wget/curl needed.
+    healthcheck:
+      test: ["CMD", "/venv/bin/python3", "/app/mcstatus-httpd.py", "--healthcheck"]       # distroless image (Dockerfile)
+      #test: ["CMD", "/usr/local/bin/python3", "/app/mcstatus-httpd.py", "--healthcheck"] # alpine image (alpine.Dockerfile)
+      interval: 60s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+#volumes:
+#  mcstatus-avatars:

@@ -1,2 +1,2 @@
 # https://github.com/py-mine/mcstatus
-mcstatus
+mcstatus>=14.2.0,<15

@@ -5,9 +5,14 @@ on:
   #  branches:
   #    - 'main'
   #    - 'master'
+  # Release: push a version tag, e.g. "git tag v2.0.0 && git push origin v2.0.0"
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+  # Dev build: start manually in the GitHub GUI (Actions -> Run workflow -> branch main)
   workflow_dispatch:
   schedule:
-    - cron: '45 5 28 * *'  # At 05:45 on day-of-month 28.
+    - cron: '45 5 28 * *'  # At 05:45 on day-of-month 28 (dev build of the default branch).
 
 defaults:
   run:
@@ -16,6 +21,9 @@ defaults:
 jobs:
   docker:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,14 +38,47 @@ jobs:
           GITHUB_REPO_SHORT=${GITHUB_REPO#*/}
           #DOCKER_REPO=${{ secrets.DOCKER_USERNAME }}/${GITHUB_REPO_SHORT}
           #REDHAT_QUAY_REPO=${{ secrets.REDHAT_QUAY_USERNAME }}/${GITHUB_REPO_SHORT}
+
+          # Version shown by the application:
+          #   release (tag v2.0.0) -> 2.0.0
+          #   dev build            -> <build date>.<commit hash>
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="${BUILD_DATE_NUMERIC}.${COMMIT_HASH}"
+          fi
           
           # Set output parameters to action.
           echo "build_date=${BUILD_DATE}" >> "$GITHUB_OUTPUT"
           echo "build_date_numeric=${BUILD_DATE_NUMERIC}" >> "$GITHUB_OUTPUT"
           echo "commit_hash=${COMMIT_HASH}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "github_repo=${GITHUB_REPO}" >> "$GITHUB_OUTPUT"
           echo "docker_repo=${DOCKER_REPO}" >> "$GITHUB_OUTPUT"
           echo "redhat_quay_repo=${REDHAT_QUAY_REPO}" >> "$GITHUB_OUTPUT"
+
+      # Image tags:
+      #   release (tag v2.0.0):     2.0.0, 2.0, 2, latest  (pre-release v2.0.0-rc1: only 2.0.0-rc1)
+      #   dev build (GUI/schedule): dev
+      #   every build:              <build date>.<commit hash>, <commit hash>
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/${{ steps.script.outputs.github_repo }}
+          #  docker.io/${{ steps.script.outputs.docker_repo }}
+          #  quay.io/${{ steps.script.outputs.redhat_quay_repo }}
+          flavor: |
+            latest=false
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable=${{ github.ref_type == 'tag' && !contains(github.ref_name, '-') }}
+            type=raw,value=dev,enable=${{ github.ref_type != 'tag' }}
+            type=raw,value=${{ steps.script.outputs.build_date_numeric }}.${{ steps.script.outputs.commit_hash }}
+            type=raw,value=${{ steps.script.outputs.commit_hash }}
 
       - name: Set up QEMU
         id: qemu
@@ -83,9 +124,50 @@ jobs:
           build-args: |
             BUILD_DATE=${{steps.script.outputs.build_date}}
             VCS_REF=${{steps.script.outputs.commit_hash}}
-          tags: |
-            ghcr.io/${{steps.script.outputs.github_repo}}:${{steps.script.outputs.build_date_numeric}}.${{steps.script.outputs.commit_hash}}
-            ghcr.io/${{steps.script.outputs.github_repo}}:${{steps.script.outputs.commit_hash}}
-            ghcr.io/${{steps.script.outputs.github_repo}}:latest
-          #  docker.io/${{steps.script.outputs.docker_repo}}:latest
-          #  quay.io/${{steps.script.outputs.redhat_quay_repo}}:latest
+            VERSION=${{steps.script.outputs.version}}
+          tags: ${{ steps.meta.outputs.tags }}
+
+  release:
+    # Only for pushed version tags and only if the Docker image was built successfully.
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    needs: docker
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create archives
+        id: archive
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          NAME="mcstatus-httpd-${VERSION}"
+          mkdir -p "dist/${NAME}"
+          cp mcstatus-httpd.py requirements.txt README.md LICENSE "dist/${NAME}/"
+
+          # Set the release version as default in the packaged script (instead of "dev").
+          sed -i -E "s/^DEFAULT_VERSION: Final = \"dev\"(\r?)$/DEFAULT_VERSION: Final = \"${VERSION}\"\1/" "dist/${NAME}/mcstatus-httpd.py"
+          grep -q "^DEFAULT_VERSION: Final = \"${VERSION}\"" "dist/${NAME}/mcstatus-httpd.py"
+
+          cd dist
+          tar -czf "${NAME}.tar.gz" "${NAME}"
+          zip -rq "${NAME}.zip" "${NAME}"
+          echo "name=${NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARCHIVE_NAME: ${{ steps.archive.outputs.name }}
+        run: |
+          PRERELEASE=()
+          if [[ "${GITHUB_REF_NAME}" == *-* ]]; then
+            PRERELEASE=(--prerelease)  # e.g. v2.0.0-rc1
+          fi
+          gh release create "${GITHUB_REF_NAME}" \
+            "dist/${ARCHIVE_NAME}.tar.gz" \
+            "dist/${ARCHIVE_NAME}.zip" \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes \
+            --verify-tag \
+            "${PRERELEASE[@]}"
