@@ -140,7 +140,6 @@ The name is shown as tooltip on mouse over and on tap.
     ```
     A named volume gets the right owner automatically. A bind mount (host directory) must be writable for the user of the container (distroless: UID `65532`, alpine: `nobody` = UID `65534`). With `read_only: true` use a volume or `tmpfs` for the directory.
   * `AVATAR_CACHE_MAX_ENTRIES`: the least recently used avatars are removed above the limit (every type and size counts). `0` = unlimited, recommended only with `AVATAR_ONLINE_ONLY=1`: with any name allowed, random names (mc-heads delivers the default skin for every name) can fill the cache.
-* The status JSON contains `"avatar": {"type": "head", "size": 64, "types": ["head", "body"], "sizes": [16, 32, ...], "path": "/avatar/"}` if enabled, the website examples use avatars only then.
 
 ## Website examples
 
