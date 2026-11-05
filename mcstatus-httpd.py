@@ -160,10 +160,11 @@ LOG_LEVELS: Final = ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
 TRUE_VALUES: Final = frozenset({"1", "true", "yes", "on"})
 FALSE_VALUES: Final = frozenset({"0", "false", "no", "off"})
 
-# Link to the source code in the status JSON ("sourcecode"), see collect_status().
-# Not documented: MCSTATUS_HTTPD_SOURCECODE=0 removes it from the output.
+# Link to the source code, always in the health check JSON ("sourcecode").
+# Not documented: MCSTATUS_HTTPD_INFO=1 also adds "version" and "sourcecode" to the
+# status JSON (default: off), see collect_status().
 SOURCE_CODE_URL: Final = "https://github.com/Tob1as/mcstatus-httpd"
-SHOW_SOURCE_CODE: Final = os.environ.get("MCSTATUS_HTTPD_SOURCECODE", "").strip().lower() not in FALSE_VALUES
+SHOW_INFO: Final = os.environ.get("MCSTATUS_HTTPD_INFO", "").strip().lower() in TRUE_VALUES
 
 type IPAddress = ipaddress.IPv4Address | ipaddress.IPv6Address
 type IPNetwork = ipaddress.IPv4Network | ipaddress.IPv6Network
@@ -1115,8 +1116,9 @@ def collect_status(settings: Settings) -> dict[str, Any]:
     #        "path": f"{settings.http_prefix}/avatar/",
     #    }
 
-    # Link to the source code, comment out these two lines to remove it.
-    if SHOW_SOURCE_CODE:
+    # Version and link to the source code, only with MCSTATUS_HTTPD_INFO=1 (not documented).
+    if SHOW_INFO:
+        result["version"] = __version__
         result["sourcecode"] = SOURCE_CODE_URL
     return result
 
@@ -1842,7 +1844,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         if path == (prefix or "/"):
             self._send_json(HTTPStatus.OK, self.app.cache.get(), include_body=include_body)
         elif path in (f"{prefix}/healthcheck", "/healthcheck"):
-            health = {"status": "ok", "timestamp": utc_now(), "version": __version__}
+            health = {"status": "ok", "timestamp": utc_now(), "version": __version__, "sourcecode": SOURCE_CODE_URL}
             self._send_json(HTTPStatus.OK, health, include_body=include_body)
         elif self.app.avatars is not None and path.startswith(avatar_prefix):
             self._send_avatar(self.app.avatars, unquote(path.removeprefix(avatar_prefix)), url.query,

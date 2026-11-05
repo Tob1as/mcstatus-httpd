@@ -318,7 +318,7 @@ Unreachable server:
 Health check (`/healthcheck`):
 
 ```json
-{"status": "ok", "timestamp": "2026-01-01T12:00:00+00:00", "version": "20260101120000.a1b2c3d4"}
+{"status": "ok", "timestamp": "2026-01-01T12:00:00+00:00", "version": "20260101120000.a1b2c3d4", "sourcecode": "https://github.com/Tob1as/mcstatus-httpd"}
 ```
 
 ### Changes to version 1.x
