@@ -18,7 +18,7 @@ services:
     #  - ./mcstatus-httpd.py:/app/mcstatus-httpd.py:ro
     #  - ./ssl/ssl.crt:/app/ssl.crt:ro
     #  - ./ssl/ssl.key:/app/ssl.key:ro
-    #  - mcstatus-avatars:/tmp/mcstatus-httpd/avatars:rw  # with AVATAR_CACHE_TYPE: file, keeps avatars when the container is recreated
+    #  - mcstatus-cache:/tmp/mcstatus-httpd:rw  # with AVATAR_CACHE_TYPE/PLAYER_UUID_CACHE_TYPE: file, keeps avatars and UUIDs when the container is recreated
     environment:
       #TZ: Europe/Berlin
       # Demo servers of https://mcstatus.io - replace with your own servers.
@@ -40,17 +40,24 @@ services:
       #SSL_CERTFILE: ssl.crt
       #SSL_KEYFILE: ssl.key
       #AVATAR_ENABLE: 1                     # player avatars (Java) at <prefix>/avatar/<name>, loaded and cached by mcstatus-httpd
-      #AVATAR_TYPE: head                    # default type: head or body
+      #AVATAR_TYPE: head                    # default type: head, body, head3d or body3d
       #AVATAR_IMAGE_SIZE: 64                # default image width in pixels loaded from the providers (8-300)
-      #AVATAR_ALLOWED_TYPES: head,body      # types allowed via ?type=
+      #AVATAR_ALLOWED_TYPES: head,body,head3d,body3d  # types allowed via ?type=
       #AVATAR_ALLOWED_SIZES: 16,32,48,64,96,128,192,256,300  # sizes allowed via ?size=
-      #AVATAR_PROVIDERS: mc-heads,minotar   # order of preference (fallback), or own URL templates with {name} and {size}, optional "head="/"body=" prefix
+      #AVATAR_PROVIDERS: mc-heads,minotar,crafthead  # order of preference (fallback), or own URL templates with {name}/{id} and {size}, optional "head="/"body="/... prefix
       #AVATAR_CACHE_TTL: 3600               # seconds until an avatar is loaded again (the old one is kept if that fails)
       #AVATAR_CACHE_TYPE: memory            # memory or file (see volumes)
       #AVATAR_CACHE_DIR: /tmp/mcstatus-httpd/avatars
       #AVATAR_CACHE_MAX_ENTRIES: 500        # 0 = unlimited
       #AVATAR_TLS_VERIFY: 0                 # accept self-signed HTTPS certificates of own URL templates
       #AVATAR_ONLINE_ONLY: 0                # serve avatars of any player name, not only of online players
+      #AVATAR_TYPE_FALLBACK: 1              # flat avatar if a 3D avatar is not available (head3d -> head, body3d -> body)
+      #PLAYER_UUID_LOOKUP: 1                # look up player UUIDs for the avatar providers ({id}), 0 = always use the name
+      #PLAYER_UUID_PROVIDERS: mojang,minecraftservices,playerdb,minetools  # order of preference (fallback)
+      #PLAYER_UUID_CACHE_TTL: 86400         # seconds until a UUID is looked up again (the old one is kept if that fails)
+      #PLAYER_UUID_CACHE_TYPE: memory       # memory or file (see volumes)
+      #PLAYER_UUID_CACHE_FILE: /tmp/mcstatus-httpd/uuids.json
+      #PLAYER_UUID_CACHE_MAX_ENTRIES: 1000  # 0 = unlimited
       #LOGLEVEL: INFO
     # Works with the distroless and the alpine image, no wget/curl needed.
     healthcheck:
@@ -62,4 +69,4 @@ services:
       retries: 3
 
 #volumes:
-#  mcstatus-avatars:
+#  mcstatus-cache:

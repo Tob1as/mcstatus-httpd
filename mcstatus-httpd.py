@@ -39,17 +39,24 @@ Configuration:
     SSL_CERTFILE                        --ssl-certfile         ssl.crt
     SSL_KEYFILE                         --ssl-keyfile          ssl.key
     AVATAR_ENABLE                       --avatar / --no-avatar 0
-    AVATAR_TYPE                         --avatar-type          head (or body)
+    AVATAR_TYPE                         --avatar-type          head (body, head3d, body3d)
     AVATAR_IMAGE_SIZE                   --avatar-image-size    64 (pixels, 8-300)
-    AVATAR_ALLOWED_TYPES                --avatar-allowed-types head,body
+    AVATAR_ALLOWED_TYPES                --avatar-allowed-types head,body,head3d,body3d
     AVATAR_ALLOWED_SIZES                --avatar-allowed-sizes 16,32,48,64,96,128,192,256,300
-    AVATAR_PROVIDERS                    --avatar-providers     mc-heads,minotar
+    AVATAR_PROVIDERS                    --avatar-providers     mc-heads,minotar,crafthead
     AVATAR_CACHE_TTL                    --avatar-cache-ttl     3600 (seconds)
     AVATAR_CACHE_TYPE                   --avatar-cache-type    memory (or file)
     AVATAR_CACHE_DIR                    --avatar-cache-dir     /tmp/mcstatus-httpd/avatars
     AVATAR_CACHE_MAX_ENTRIES            --avatar-cache-max-entries 500 (0 = unlimited)
     AVATAR_TLS_VERIFY                   --[no-]avatar-tls-verify 1 (own URL templates only)
     AVATAR_ONLINE_ONLY                  --[no-]avatar-online-only 1 (0 = any valid name)
+    AVATAR_TYPE_FALLBACK                --[no-]avatar-type-fallback 1 (head3d -> head, body3d -> body)
+    PLAYER_UUID_LOOKUP                  --[no-]player-uuid-lookup 1 (0 = always the name)
+    PLAYER_UUID_PROVIDERS               --player-uuid-providers mojang,minecraftservices,playerdb,minetools
+    PLAYER_UUID_CACHE_TTL               --player-uuid-cache-ttl 86400 (seconds)
+    PLAYER_UUID_CACHE_TYPE              --player-uuid-cache-type memory (or file)
+    PLAYER_UUID_CACHE_FILE              --player-uuid-cache-file /tmp/mcstatus-httpd/uuids.json
+    PLAYER_UUID_CACHE_MAX_ENTRIES       --player-uuid-cache-max-entries 1000 (0 = unlimited)
     LOGLEVEL                            --loglevel             INFO
 
     At least one server (Java or Bedrock) must be configured. A server that is
@@ -170,27 +177,41 @@ NETHERNET_GAME_TYPES: Final = {0: "Survival", 1: "Creative", 2: "Adventure"}
 NETHERNET_MAX_RESPONSE_SIZE: Final = 64 * 1024
 
 # Player avatars. Built-in providers with URL templates per avatar type,
-# "{name}" is replaced by the player name and "{size}" by the image size.
-# Both deliver flat pixel art: head NxN, body Nx2N pixels (N = size).
-AVATAR_TYPES: Final = ("head", "body")
+# "{id}" is replaced by the UUID of the player (or the name if unknown, see
+# PLAYER_UUID_*), "{name}" by the player name and "{size}" by the image size.
+# Verified: all providers deliver the same images for head and body (with helm/outer layer),
+# crafthead with slightly different colors of single body pixels.
+#   head, body: flat pixel art, head NxN, body Nx2N pixels (N = size)
+#   head3d:     isometric head WITHOUT helm (minotar/crafthead have no helm variant), facing right,
+#               the perspective differs a little between the providers
+#   body3d:     isometric body, facing right, only mc-heads
+AVATAR_TYPES: Final = ("head", "body", "head3d", "body3d")
 AVATAR_BUILTIN_PROVIDERS: Final = {
     "mc-heads": {  # https://mc-heads.net/
-        "head": "https://mc-heads.net/avatar/{name}/{size}.png",
-        "body": "https://mc-heads.net/player/{name}/{size}.png",
+        "head": "https://mc-heads.net/avatar/{id}/{size}.png",
+        "body": "https://mc-heads.net/player/{id}/{size}.png",
+        "head3d": "https://mc-heads.net/head/{id}/{size}/nohelm.png",
+        "body3d": "https://mc-heads.net/body/{id}/{size}.png",
     },
     "minotar": {  # https://minotar.net/
-        "head": "https://minotar.net/helm/{name}/{size}.png",
-        "body": "https://minotar.net/armor/body/{name}/{size}.png",
+        "head": "https://minotar.net/helm/{id}/{size}.png",
+        "body": "https://minotar.net/armor/body/{id}/{size}.png",
+        "head3d": "https://minotar.net/cube/{id}/{size}.png",
+    },
+    "crafthead": {  # https://crafthead.net/ (same URL layout as minotar)
+        "head": "https://crafthead.net/helm/{id}/{size}.png",
+        "body": "https://crafthead.net/armor/body/{id}/{size}.png",
+        "head3d": "https://crafthead.net/cube/{id}/{size}.png",
     },
 }
 # Allowed image width in pixels requested from the providers (AVATAR_IMAGE_SIZE, AVATAR_ALLOWED_SIZES).
-# Both providers deliver at least 8 px, minotar at most 300 px (mc-heads 600 px).
+# All providers deliver at least 8 px, minotar and crafthead at most 300 px (mc-heads 600 px).
 AVATAR_MIN_IMAGE_SIZE: Final = 8
 AVATAR_MAX_IMAGE_SIZE: Final = 300
 # Upper limit for an avatar image in bytes (a 300 px body is about 3 KB).
 AVATAR_MAX_IMAGE_BYTES: Final = 64 * 1024
-# Where avatars are cached: in memory (lost on restart) or as files in a directory.
-AVATAR_CACHE_TYPES: Final = ("memory", "file")
+# Where avatars and player UUIDs are cached: in memory (lost on restart) or as file(s).
+CACHE_TYPES: Final = ("memory", "file")
 # Seconds to wait for an avatar provider.
 AVATAR_FETCH_TIMEOUT: Final = 5.0
 # Seconds a failing provider is skipped (rate limits use "Retry-After", up to the maximum).
@@ -198,6 +219,9 @@ AVATAR_PROVIDER_PAUSE: Final = 300.0
 AVATAR_PROVIDER_MAX_PAUSE: Final = 3600.0
 # Seconds a failed avatar lookup is remembered, so not every page view retries it.
 AVATAR_FAILURE_TTL: Final = 300.0
+# With AVATAR_TYPE_FALLBACK a 3D avatar that no provider delivers (and that is not cached)
+# is replaced by the flat one, so a website does not show the name instead of an avatar.
+AVATAR_TYPE_FALLBACKS: Final = {"head3d": "head", "body3d": "body"}
 # Maximum number of remembered failed lookups (memory only, independent of the avatar cache).
 AVATAR_FAILURE_MAX_ENTRIES: Final = 1000
 # Valid Minecraft Java Edition player names.
@@ -205,8 +229,28 @@ PLAYER_NAME_PATTERN: Final = re.compile(r"[A-Za-z0-9_]{1,16}")
 # Size query parameter of the avatar endpoint (the value must also be in AVATAR_ALLOWED_SIZES).
 AVATAR_SIZE_PATTERN: Final = re.compile(r"[0-9]{1,3}")
 # Own URL template with optional type prefix, e.g. "head=http://minecraft:8100/{name}.png".
-AVATAR_TYPE_PREFIX_PATTERN: Final = re.compile(r"([a-z]+)=(.*)", re.IGNORECASE)
+AVATAR_TYPE_PREFIX_PATTERN: Final = re.compile(r"([a-z0-9]+)=(.*)", re.IGNORECASE)
 PNG_SIGNATURE: Final = b"\x89PNG\r\n\x1a\n"
+
+# Player UUIDs (name -> UUID), used for the "{id}" placeholder of the avatar providers.
+# Built-in lookup services, "{name}" is replaced by the player name. Each one answers
+# differently, see _parse_player_uuid().
+PLAYER_UUID_BUILTIN_PROVIDERS: Final = {
+    "mojang": "https://api.mojang.com/users/profiles/minecraft/{name}",
+    "minecraftservices": "https://api.minecraftservices.com/minecraft/profile/lookup/name/{name}",
+    "playerdb": "https://playerdb.co/api/player/minecraft/{name}",
+    "minetools": "https://api.minetools.eu/uuid/{name}",
+}
+# Seconds to wait for a UUID lookup service.
+PLAYER_UUID_FETCH_TIMEOUT: Final = 3.0
+# Seconds a failing UUID lookup service is skipped (rate limits use "Retry-After").
+PLAYER_UUID_PROVIDER_PAUSE: Final = 300.0
+# Upper limit for an answer of a UUID lookup service (normally below 2 KB).
+PLAYER_UUID_MAX_RESPONSE_SIZE: Final = 64 * 1024
+# Seconds an unknown name is remembered at most (a new account may get this name).
+PLAYER_UUID_UNKNOWN_TTL: Final = 3600.0
+# A UUID without dashes.
+PLAYER_UUID_PATTERN: Final = re.compile(r"[0-9a-f]{32}")
 
 
 # ---------------------------------------------------------------------------
@@ -239,7 +283,7 @@ class AvatarProvider:
     """An avatar provider with its URL templates per avatar type."""
 
     label: str  # shown in the log, e.g. "mc-heads" or the host of an own URL template
-    templates: Mapping[str, str]  # avatar type -> URL with "{name}" and optional "{size}"
+    templates: Mapping[str, str]  # avatar type -> URL with "{id}"/"{name}" and optional "{size}"
     verify_tls: bool = True  # False = accept any HTTPS certificate (only own URL templates)
 
 
@@ -266,11 +310,18 @@ class Settings:
     avatar_allowed_sizes: tuple[int, ...]  # sizes allowed via ?size=, includes the default
     avatar_providers: tuple[AvatarProvider, ...]  # in order of preference (fallback order)
     avatar_cache_ttl: float
-    avatar_cache_type: str  # one of AVATAR_CACHE_TYPES
+    avatar_cache_type: str  # one of CACHE_TYPES
     avatar_cache_dir: Path  # only used with avatar_cache_type "file"
     avatar_cache_max_entries: int  # 0 = unlimited
     avatar_tls_verify: bool  # False = no certificate check for own URL templates
     avatar_online_only: bool  # True = only avatars of players in the current status
+    avatar_type_fallback: bool  # True = flat avatar if a 3D avatar is not available
+    player_uuid_lookup: bool  # False = "{id}" is always the player name
+    player_uuid_providers: tuple[str, ...]  # names of PLAYER_UUID_BUILTIN_PROVIDERS, fallback order
+    player_uuid_cache_ttl: float
+    player_uuid_cache_type: str  # one of CACHE_TYPES
+    player_uuid_cache_file: Path  # only used with player_uuid_cache_type "file"
+    player_uuid_cache_max_entries: int  # 0 = unlimited
     loglevel: str
 
 
@@ -453,18 +504,18 @@ def _avatar_image_sizes(value: str) -> tuple[int, ...]:
     return sizes
 
 
-def _avatar_cache_type(value: str) -> str:
-    """Argument type: avatar cache type (case-insensitive), one of AVATAR_CACHE_TYPES."""
+def _cache_type(value: str) -> str:
+    """Argument type: cache type (case-insensitive), one of CACHE_TYPES."""
     cache_type = value.strip().lower()
-    if cache_type not in AVATAR_CACHE_TYPES:
+    if cache_type not in CACHE_TYPES:
         raise argparse.ArgumentTypeError(
-            f"invalid avatar cache type {value!r}, choose from {', '.join(AVATAR_CACHE_TYPES)}"
+            f"invalid cache type {value!r}, choose from {', '.join(CACHE_TYPES)}"
         )
     return cache_type
 
 
-def _avatar_cache_max_entries(value: str) -> int:
-    """Argument type: maximum number of cached avatars (>= 0, 0 = unlimited)."""
+def _cache_max_entries(value: str) -> int:
+    """Argument type: maximum number of cache entries (>= 0, 0 = unlimited)."""
     try:
         entries = int(value)
     except ValueError:
@@ -478,8 +529,9 @@ def _avatar_providers(value: str) -> tuple[tuple[str | None, str], ...]:
     """Argument type: avatar providers in order of preference.
 
     Each entry is a built-in provider (see AVATAR_BUILTIN_PROVIDERS) or an own
-    URL template with "{name}" and optional "{size}", e.g. of a server plugin.
-    An own URL template can start with "<type>=" if it only delivers this type:
+    URL template with "{name}" (or "{id}" = UUID) and optional "{size}", e.g. of
+    a server plugin. An own URL template can start with "<type>=" if it only
+    delivers this type:
     "head=http://minecraft:8100/tiles/faces/32x32/{name}.png, mc-heads, minotar"
 
     Returns:
@@ -501,7 +553,8 @@ def _avatar_providers(value: str) -> tuple[tuple[str | None, str], ...]:
                     f"a type prefix is only possible for own URL templates, not for {item!r}"
                 )
         parts = urlsplit(item)
-        if parts.scheme not in ("http", "https") or not parts.netloc or "{name}" not in item:
+        if (parts.scheme not in ("http", "https") or not parts.netloc
+                or ("{name}" not in item and "{id}" not in item)):
             raise argparse.ArgumentTypeError(
                 f"invalid avatar provider {item!r}, use {', '.join(AVATAR_BUILTIN_PROVIDERS)} "
                 "or an URL template like '[head=]https://example.com/avatar/{name}/{size}.png'"
@@ -509,6 +562,23 @@ def _avatar_providers(value: str) -> tuple[tuple[str | None, str], ...]:
         providers.append((avatar_type, item))
     if not providers:
         raise argparse.ArgumentTypeError("at least one avatar provider is required")
+    return tuple(providers)
+
+
+def _player_uuid_providers(value: str) -> tuple[str, ...]:
+    """Argument type: UUID lookup services in order of preference, see PLAYER_UUID_BUILTIN_PROVIDERS."""
+    providers: list[str] = []
+    for item in value.split(","):
+        if not (item := item.strip().lower()):
+            continue
+        if item not in PLAYER_UUID_BUILTIN_PROVIDERS:
+            raise argparse.ArgumentTypeError(
+                f"invalid UUID provider {item!r}, choose from {', '.join(PLAYER_UUID_BUILTIN_PROVIDERS)}"
+            )
+        if item not in providers:
+            providers.append(item)
+    if not providers:
+        raise argparse.ArgumentTypeError("at least one UUID provider is required")
     return tuple(providers)
 
 
@@ -618,16 +688,17 @@ def build_arg_parser() -> argparse.ArgumentParser:
            type=_avatar_image_sizes, metavar="SIZES",
            text="Image widths that can be requested with ?size=, comma separated, the default size is "
                 "always allowed (default: 16,32,48,64,96,128,192,256,300).")
-    option(avatar, "--avatar-providers", env="AVATAR_PROVIDERS", default="mc-heads,minotar",
+    option(avatar, "--avatar-providers", env="AVATAR_PROVIDERS", default=",".join(AVATAR_BUILTIN_PROVIDERS),
            type=_avatar_providers, metavar="PROVIDERS",
            text="Avatar providers in order of preference, the next one is used if a provider fails: "
-                f"{', '.join(AVATAR_BUILTIN_PROVIDERS)} or own URL templates with {{name}} and {{size}}, "
-                "optionally limited to one type with '<type>=' (default: mc-heads,minotar).")
+                f"{', '.join(AVATAR_BUILTIN_PROVIDERS)} or own URL templates with {{name}} (or {{id}} = UUID) "
+                "and {size}, optionally limited to one type with '<type>=' "
+                f"(default: {','.join(AVATAR_BUILTIN_PROVIDERS)}).")
     option(avatar, "--avatar-cache-ttl", env="AVATAR_CACHE_TTL", default="3600", type=_cache_ttl,
            metavar="SECONDS",
            text="Seconds an avatar is used before it is loaded again, if loading fails the old avatar "
                 "is kept (default: 3600).")
-    option(avatar, "--avatar-cache-type", env="AVATAR_CACHE_TYPE", default="memory", type=_avatar_cache_type,
+    option(avatar, "--avatar-cache-type", env="AVATAR_CACHE_TYPE", default="memory", type=_cache_type,
            metavar="TYPE",
            text="Where avatars are cached: 'memory' (lost on restart) or 'file' (directory, "
                 "see --avatar-cache-dir) (default: memory).")
@@ -635,7 +706,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
            type=Path, metavar="DIR",
            text="Directory of the file cache, created if missing (default: /tmp/mcstatus-httpd/avatars).")
     option(avatar, "--avatar-cache-max-entries", env="AVATAR_CACHE_MAX_ENTRIES", default="500",
-           type=_avatar_cache_max_entries, metavar="NUMBER",
+           type=_cache_max_entries, metavar="NUMBER",
            text="Maximum number of cached avatars (every type and size counts), the least recently "
                 "used ones are removed first, 0 = unlimited (default: 500).")
     avatar.add_argument("--avatar-tls-verify", action=argparse.BooleanOptionalAction, default=None,
@@ -645,6 +716,34 @@ def build_arg_parser() -> argparse.ArgumentParser:
     avatar.add_argument("--avatar-online-only", action=argparse.BooleanOptionalAction, default=None,
                         help="Only serve avatars of players who are currently online, disable to allow any "
                              "valid player name (default: enabled). [env: AVATAR_ONLINE_ONLY]")
+    avatar.add_argument("--avatar-type-fallback", action=argparse.BooleanOptionalAction, default=None,
+                        help="Serve the flat avatar if a 3D avatar is not available (head3d -> head, "
+                             "body3d -> body), with a short browser cache time (default: enabled). "
+                             "[env: AVATAR_TYPE_FALLBACK]")
+
+    uuid = parser.add_argument_group("Player UUIDs (used for {id} of the avatar providers)")
+    uuid.add_argument("--player-uuid-lookup", action=argparse.BooleanOptionalAction, default=None,
+                      help="Look up the UUID of a player by name, disable to always use the name "
+                           "(default: enabled). [env: PLAYER_UUID_LOOKUP]")
+    option(uuid, "--player-uuid-providers", env="PLAYER_UUID_PROVIDERS",
+           default=",".join(PLAYER_UUID_BUILTIN_PROVIDERS), type=_player_uuid_providers, metavar="PROVIDERS",
+           text="UUID lookup services in order of preference, the next one is used if a service fails "
+                f"(default: {','.join(PLAYER_UUID_BUILTIN_PROVIDERS)}).")
+    option(uuid, "--player-uuid-cache-ttl", env="PLAYER_UUID_CACHE_TTL", default="86400", type=_cache_ttl,
+           metavar="SECONDS",
+           text="Seconds a UUID is used before it is looked up again, if that fails the old UUID is kept "
+                f"(unknown names at most {PLAYER_UUID_UNKNOWN_TTL:g}) (default: 86400).")
+    option(uuid, "--player-uuid-cache-type", env="PLAYER_UUID_CACHE_TYPE", default="memory", type=_cache_type,
+           metavar="TYPE",
+           text="Where UUIDs are cached: 'memory' (lost on restart) or 'file' (JSON file, "
+                "see --player-uuid-cache-file) (default: memory).")
+    option(uuid, "--player-uuid-cache-file", env="PLAYER_UUID_CACHE_FILE", default="/tmp/mcstatus-httpd/uuids.json",
+           type=Path, metavar="FILE",
+           text="JSON file of the UUID cache, created if missing (default: /tmp/mcstatus-httpd/uuids.json).")
+    option(uuid, "--player-uuid-cache-max-entries", env="PLAYER_UUID_CACHE_MAX_ENTRIES", default="1000",
+           type=_cache_max_entries, metavar="NUMBER",
+           text="Maximum number of cached UUIDs, the least recently used ones are removed first, "
+                "0 = unlimited (default: 1000).")
 
     misc = parser.add_argument_group("Miscellaneous")
     option(misc, "--loglevel", env="LOGLEVEL", default="INFO", type=_loglevel, metavar="LEVEL",
@@ -683,6 +782,8 @@ def parse_settings(argv: Sequence[str] | None = None) -> tuple[Settings, bool]:
     avatar_enabled = env_bool(args.avatar, "AVATAR_ENABLE")
     avatar_tls_verify = env_bool(args.avatar_tls_verify, "AVATAR_TLS_VERIFY", default="1")
     avatar_online_only = env_bool(args.avatar_online_only, "AVATAR_ONLINE_ONLY", default="1")
+    avatar_type_fallback = env_bool(args.avatar_type_fallback, "AVATAR_TYPE_FALLBACK", default="1")
+    player_uuid_lookup = env_bool(args.player_uuid_lookup, "PLAYER_UUID_LOOKUP", default="1")
 
     # Built-in providers deliver every type, own URL templates the type of their prefix
     # or the default type. Disabling the certificate check only affects own URL templates.
@@ -747,6 +848,13 @@ def parse_settings(argv: Sequence[str] | None = None) -> tuple[Settings, bool]:
         avatar_cache_max_entries=args.avatar_cache_max_entries,
         avatar_tls_verify=avatar_tls_verify,
         avatar_online_only=avatar_online_only,
+        avatar_type_fallback=avatar_type_fallback,
+        player_uuid_lookup=player_uuid_lookup,
+        player_uuid_providers=args.player_uuid_providers,
+        player_uuid_cache_ttl=args.player_uuid_cache_ttl,
+        player_uuid_cache_type=args.player_uuid_cache_type,
+        player_uuid_cache_file=args.player_uuid_cache_file,
+        player_uuid_cache_max_entries=args.player_uuid_cache_max_entries,
         loglevel=args.loglevel,
     )
     return settings, args.healthcheck
@@ -1038,6 +1146,262 @@ class StatusCache:
 
 
 # ---------------------------------------------------------------------------
+# Player UUIDs
+# ---------------------------------------------------------------------------
+
+
+class PlayerUUIDProviderError(Exception):
+    """A UUID lookup service failed (not reachable, rate limit, unexpected answer).
+
+    ``pause`` is the number of seconds the service should be skipped.
+    """
+
+    def __init__(self, message: str, pause: float) -> None:
+        super().__init__(message)
+        self.pause = pause
+
+
+def _parse_player_uuid(provider: str, status: int, data: Any) -> str | None:
+    """Extract the UUID from the answer of a lookup service.
+
+    Returns:
+        The UUID without dashes, None if the service does not know the name.
+
+    Raises:
+        ValueError: Unexpected answer.
+    """
+    if not isinstance(data, dict):
+        data = {}
+    if provider in ("mojang", "minecraftservices"):
+        # {"id": "853c80ef...", "name": "jeb_"}, unknown name: HTTP 404 (formerly 204 without body)
+        if status in (HTTPStatus.NOT_FOUND, HTTPStatus.NO_CONTENT):
+            return None
+        value = data.get("id") if status == HTTPStatus.OK else None
+    elif provider == "playerdb":
+        # {"code": "player.found", "data": {"player": {"raw_id": "853c80ef...", ...}}},
+        # unknown name: HTTP 400 {"code": "minecraft.invalid_username", ...}
+        if data.get("code") == "minecraft.invalid_username":
+            return None
+        player = (data.get("data") or {}).get("player") or {} if status == HTTPStatus.OK else {}
+        value = player.get("raw_id") or player.get("id") if isinstance(player, dict) else None
+    else:  # minetools
+        # {"id": "853c80ef...", "name": "jeb_", "status": "OK"}, unknown name: HTTP 200
+        # {"id": null, "name": "...", "status": "ERR"} or {"error": "Invalid UUID or nickname.", "status": "ERR"}
+        if data.get("status") == "ERR" and (
+            ("id" in data and data["id"] is None) or "invalid" in str(data.get("error", "")).lower()
+        ):
+            return None
+        value = data.get("id") if data.get("status") == "OK" else None
+    uuid = str(value or "").replace("-", "").lower()
+    if not PLAYER_UUID_PATTERN.fullmatch(uuid):
+        raise ValueError(f"unexpected answer (HTTP {status})")
+    return uuid
+
+
+def _fetch_player_uuid(provider: str, name: str) -> str | None:
+    """Ask a lookup service for the UUID of a player.
+
+    Returns:
+        The UUID without dashes, None if the service does not know the name.
+
+    Raises:
+        PlayerUUIDProviderError: The service failed, the next one should be asked.
+    """
+    url = PLAYER_UUID_BUILTIN_PROVIDERS[provider].replace("{name}", quote(name))
+    request = urllib.request.Request(url, headers={
+        "Accept": "application/json",
+        "User-Agent": f"mcstatus-httpd/{__version__}",
+    })
+    try:
+        with urllib.request.urlopen(request, timeout=PLAYER_UUID_FETCH_TIMEOUT) as response:
+            status, body = response.status, response.read(PLAYER_UUID_MAX_RESPONSE_SIZE + 1)
+    except urllib.error.HTTPError as exc:
+        if exc.code == HTTPStatus.TOO_MANY_REQUESTS:
+            raise PlayerUUIDProviderError("HTTP 429 (rate limit)",
+                                          pause=_retry_after(exc.headers.get("Retry-After"))) from None
+        if exc.code >= 500:
+            raise PlayerUUIDProviderError(f"HTTP {exc.code}", pause=PLAYER_UUID_PROVIDER_PAUSE) from None
+        # Some services answer an unknown name with 400/404 and a JSON body.
+        status = exc.code
+        try:
+            body = exc.read(PLAYER_UUID_MAX_RESPONSE_SIZE + 1)
+        except (OSError, http.client.HTTPException):
+            body = b""
+    except (OSError, ValueError, http.client.HTTPException) as exc:  # URLError, timeout, broken answer
+        raise PlayerUUIDProviderError(repr(exc), pause=PLAYER_UUID_PROVIDER_PAUSE) from None
+
+    try:
+        if len(body) > PLAYER_UUID_MAX_RESPONSE_SIZE:
+            raise ValueError("answer too large")
+        return _parse_player_uuid(provider, status, json.loads(body) if body.strip() else None)
+    except (ValueError, AttributeError, TypeError) as exc:
+        raise PlayerUUIDProviderError(f"invalid answer: {exc}", pause=PLAYER_UUID_PROVIDER_PAUSE) from None
+
+
+class PlayerUUIDCache:
+    """Cache player name (lower case) -> (time of the lookup, UUID or None = unknown name).
+
+    In memory, or additionally as JSON file that is read on start and written on
+    every change. The file stores the time of the lookup (not the expiry), so a
+    changed TTL also applies to existing entries:
+    {"jeb_": {"id": "853c80ef3c3749fdaa49938b674adae6", "time": 1793413600}, ...}
+    """
+
+    def __init__(self, max_entries: int, file: Path | None) -> None:
+        self._max_entries = max_entries  # 0 = unlimited
+        self._file = file  # None = memory only
+        self._lock = threading.Lock()
+        self._entries: OrderedDict[str, tuple[float, str | None]] = OrderedDict()  # least recently used first
+        if file is not None:
+            file.parent.mkdir(parents=True, exist_ok=True)
+            if not os.access(file.parent, os.W_OK | os.X_OK) or (file.exists() and not os.access(file, os.W_OK)):
+                raise PermissionError(f"player UUID cache file is not writable: {file}")
+            self._load(file)
+            logger.info("Player UUID cache: %d entries in %s", len(self._entries), file)
+
+    def _load(self, file: Path) -> None:
+        """Read the cache file, invalid entries are skipped."""
+        try:
+            data = json.loads(file.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            return
+        except (OSError, ValueError) as exc:
+            logger.warning("Ignoring invalid player UUID cache file %s: %s", file, exc)
+            return
+        if not isinstance(data, dict):
+            logger.warning("Ignoring invalid player UUID cache file %s", file)
+            return
+        for name, entry in data.items():  # stored in least recently used order
+            if not (PLAYER_NAME_PATTERN.fullmatch(name) and name == name.lower() and isinstance(entry, dict)):
+                continue
+            uuid, stored_at = entry.get("id"), entry.get("time")
+            if uuid is not None and not (isinstance(uuid, str) and PLAYER_UUID_PATTERN.fullmatch(uuid)):
+                continue
+            if not (isinstance(stored_at, (int, float)) and math.isfinite(stored_at)):
+                continue
+            self._entries[name] = (float(stored_at), uuid)
+        self._evict()
+
+    def get(self, name: str) -> tuple[float, str | None] | None:
+        """Return (time of the lookup, UUID or None = unknown name), None if not cached."""
+        with self._lock:
+            entry = self._entries.get(name)
+            if entry is not None:
+                self._entries.move_to_end(name)
+            return entry
+
+    def put(self, name: str, uuid: str | None) -> None:
+        """Cache the result of a lookup, removes the least recently used entries above the limit."""
+        with self._lock:
+            self._entries[name] = (time.time(), uuid)
+            self._entries.move_to_end(name)
+            self._evict()
+            if self._file is not None:
+                self._save(self._file)
+
+    def _evict(self) -> None:
+        while self._max_entries and len(self._entries) > self._max_entries:
+            self._entries.popitem(last=False)
+
+    def _save(self, file: Path) -> None:
+        """Write the cache file (the caller holds the lock)."""
+        data = {name: {"id": uuid, "time": round(stored_at)} for name, (stored_at, uuid) in self._entries.items()}
+        try:
+            # Write to a temporary file first, so the file is never partly written.
+            fd, temp_name = tempfile.mkstemp(dir=file.parent, prefix=".", suffix=".tmp")
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                    json.dump(data, handle, separators=(",", ":"))
+                os.replace(temp_name, file)
+            except BaseException:
+                with contextlib.suppress(OSError):
+                    os.unlink(temp_name)
+                raise
+        except OSError as exc:
+            logger.warning("Cannot write player UUID cache file %s: %s", file, exc)
+
+
+class PlayerUUIDs:
+    """Looks up the UUIDs of players by name (not only usable for avatars).
+
+    The services are asked in the configured order. A service that fails is
+    skipped for a while, so the next one is used. If a service does not know the
+    name, no other service is asked. A cached UUID older than the TTL is looked up
+    again, if that fails the old UUID is used (the UUID of an account never changes,
+    only a name can move to another account).
+    """
+
+    def __init__(self, settings: Settings) -> None:
+        self._providers = settings.player_uuid_providers
+        self._ttl = settings.player_uuid_cache_ttl
+        self._cache = PlayerUUIDCache(
+            settings.player_uuid_cache_max_entries,
+            settings.player_uuid_cache_file if settings.player_uuid_cache_type == "file" else None,
+        )
+        self._lock = threading.Lock()  # one lookup at a time, protects the provider pauses
+        self._paused_until: dict[str, float] = {}  # provider -> time.monotonic()
+
+    def lookup(self, name: str) -> str | None:
+        """Return the UUID (without dashes) of a player, None if unknown or no service answered."""
+        if not PLAYER_NAME_PATTERN.fullmatch(name):
+            return None
+        key = name.lower()
+        entry = self._cache.get(key)
+        if entry is not None and self._is_fresh(entry):
+            return entry[1]
+        with self._lock:
+            # Another request may have looked up the name while this one was waiting.
+            entry = self._cache.get(key)
+            if entry is not None and self._is_fresh(entry):
+                return entry[1]
+            answered, uuid = self._query(name)
+            if answered:
+                self._cache.put(key, uuid)
+                return uuid
+        if entry is not None:
+            logger.debug("UUID of %s could not be updated, using the cached one", name)
+            return entry[1]
+        return None
+
+    def uuid_or_name(self, name: str) -> str:
+        """Return the UUID of a player, the name if it is unknown or no service answered."""
+        return self.lookup(name) or name
+
+    def _is_fresh(self, entry: tuple[float, str | None]) -> bool:
+        stored_at, uuid = entry
+        ttl = self._ttl if uuid is not None else min(self._ttl, PLAYER_UUID_UNKNOWN_TTL)
+        return time.time() - stored_at < ttl
+
+    def _query(self, name: str) -> tuple[bool, str | None]:
+        """Ask the services in order (the caller holds the lock).
+
+        Returns:
+            (answered, UUID or None = unknown name), answered is False if no service answered.
+        """
+        for provider in self._providers:
+            if self._paused_until.get(provider, 0.0) > time.monotonic():
+                continue
+            try:
+                uuid = _fetch_player_uuid(provider, name)
+            except PlayerUUIDProviderError as exc:
+                self._paused_until[provider] = time.monotonic() + exc.pause
+                logger.warning("UUID provider %s failed for %s (%s), paused for %gs", provider, name, exc, exc.pause)
+                continue
+            if uuid is None:
+                logger.debug("UUID provider %s does not know %s", provider, name)
+            else:
+                logger.debug("UUID of %s loaded from %s: %s", name, provider, uuid)
+            return True, uuid
+        logger.debug("No UUID provider answered for %s, using the name", name)
+        return False, None
+
+
+def _uses_player_id(settings: Settings) -> bool:
+    """Whether an avatar provider uses the "{id}" placeholder, only then UUIDs are looked up."""
+    return any("{id}" in template for provider in settings.avatar_providers for template in provider.templates.values())
+
+
+# ---------------------------------------------------------------------------
 # Player avatars
 # ---------------------------------------------------------------------------
 
@@ -1244,8 +1608,10 @@ class AvatarStore:
     Visitors only talk to mcstatus-httpd, the providers never see their IP addresses.
     """
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, uuids: PlayerUUIDs | None = None) -> None:
         self._providers = settings.avatar_providers
+        self._uuids = uuids  # None = "{id}" is the player name
+        self._type_fallback = settings.avatar_type_fallback
         self._ttl = settings.avatar_cache_ttl
         self._cache: MemoryAvatarCache | FileAvatarCache = (
             FileAvatarCache(settings.avatar_cache_dir, settings.avatar_cache_max_entries)
@@ -1261,6 +1627,24 @@ class AvatarStore:
         self._insecure_context = ssl.create_default_context()
         self._insecure_context.check_hostname = False
         self._insecure_context.verify_mode = ssl.CERT_NONE
+
+    def get_or_fallback(self, name: str, avatar_type: str, size: int) -> tuple[bytes, bool, str] | None:
+        """Return the avatar of a player, with AVATAR_TYPE_FALLBACK the flat one if a 3D avatar is not available.
+
+        The flat avatar is cached under its own type only, so the 3D avatar is
+        loaded again on the next request after AVATAR_FAILURE_TTL.
+
+        Returns:
+            (PNG, fresh, delivered type) or None if no avatar is available.
+            fresh is False for an outdated avatar and for a replacement.
+        """
+        if (result := self.get(name, avatar_type, size)) is not None:
+            return result[0], result[1], avatar_type
+        fallback = AVATAR_TYPE_FALLBACKS.get(avatar_type) if self._type_fallback else None
+        if fallback is None or (result := self.get(name, fallback, size)) is None:
+            return None
+        logger.debug("Avatar %s (%s, %d px) not available, using %s instead", name, avatar_type, size, fallback)
+        return result[0], False, fallback
 
     def get(self, name: str, avatar_type: str, size: int) -> tuple[bytes, bool] | None:
         """Return the avatar of a player.
@@ -1319,13 +1703,17 @@ class AvatarStore:
 
     def _download(self, name: str, avatar_type: str, size: int) -> bytes | None:
         """Try the providers of the avatar type in order until one delivers the avatar."""
+        player_id: str | None = None  # UUID or name for "{id}", only looked up if needed
         for provider in self._providers:
             if (template := provider.templates.get(avatar_type)) is None:
                 continue
             with self._lock:
                 if self._paused_until.get(provider.label, 0.0) > time.monotonic():
                     continue
-            url = template.replace("{name}", quote(name)).replace("{size}", str(size))
+            if "{id}" in template and player_id is None:
+                player_id = self._uuids.uuid_or_name(name) if self._uuids is not None else name
+            url = (template.replace("{id}", quote(player_id or name)).replace("{name}", quote(name))
+                   .replace("{size}", str(size)))
             try:
                 image = _download_avatar(url, None if provider.verify_tls else self._insecure_context)
             except AvatarProviderError as exc:
@@ -1376,7 +1764,13 @@ class StatusHTTPServer(ThreadingHTTPServer):
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.cache = StatusCache(settings)
-        self.avatars = AvatarStore(settings) if settings.avatar_enabled else None
+        # Player UUIDs are currently only needed for the "{id}" placeholder of the avatar providers.
+        self.player_uuids = (
+            PlayerUUIDs(settings)
+            if settings.avatar_enabled and settings.player_uuid_lookup and _uses_player_id(settings)
+            else None
+        )
+        self.avatars = AvatarStore(settings, self.player_uuids) if settings.avatar_enabled else None
         self.tls_context = (
             create_tls_context(settings.ssl_certfile, settings.ssl_keyfile)
             if settings.ssl_enabled
@@ -1470,16 +1864,18 @@ class RequestHandler(BaseHTTPRequestHandler):
         allowed = PLAYER_NAME_PATTERN.fullmatch(name) and (
             not settings.avatar_online_only or name in self._online_players()
         )
-        result = avatars.get(name, avatar_type, size) if allowed else None
+        result = avatars.get_or_fallback(name, avatar_type, size) if allowed else None
         if result is None:
             self._send_json(HTTPStatus.NOT_FOUND, {"error": "Not found"}, include_body=include_body)
             return
-        image, fresh = result
+        image, fresh, delivered_type = result
         # Browsers may cache the avatar as long as mcstatus-httpd does. An outdated avatar
-        # (could not be loaded again) only until the next attempt of mcstatus-httpd.
+        # (could not be loaded again) or a replacement (flat instead of 3D) only until the
+        # next attempt of mcstatus-httpd.
         max_age = settings.avatar_cache_ttl if fresh else min(settings.avatar_cache_ttl, AVATAR_FAILURE_TTL)
         cache_control = f"public, max-age={int(max_age)}"
-        self._send_body(HTTPStatus.OK, "image/png", image, include_body=include_body, cache_control=cache_control)
+        self._send_body(HTTPStatus.OK, "image/png", image, include_body=include_body, cache_control=cache_control,
+                        extra_headers={"X-Avatar-Type": delivered_type})
 
     def _avatar_params(self, query: str) -> tuple[str, int]:
         """Avatar type and size from the query string ("?type=body&size=128"), defaults if missing.
@@ -1525,12 +1921,15 @@ class RequestHandler(BaseHTTPRequestHandler):
         *,
         include_body: bool,
         cache_control: str = "no-store",
+        extra_headers: Mapping[str, str] | None = None,
     ) -> None:
         """Send a response with CORS and security headers (headers only for HEAD requests)."""
         self.send_response(status)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", cache_control)
+        for header, value in (extra_headers or {}).items():
+            self.send_header(header, value)
         allowed = self.app.settings.cors_origins
         if allowed == ("*",):
             self.send_header("Access-Control-Allow-Origin", "*")
@@ -1663,13 +2062,23 @@ def log_startup_info(settings: Settings) -> None:
     if settings.avatar_enabled:
         logger.info("Avatar endpoint:      %s%s/avatar/<name>[?type=TYPE][&size=PIXELS]",
                     base_url, settings.http_prefix)
-        logger.info("Avatars: default %s %d px, allowed types %s, sizes %s, providers %s",
+        logger.info("Avatars: default %s %d px, allowed types %s, sizes %s, providers %s, 3D fallback to flat: %s",
                     settings.avatar_type, settings.avatar_image_size,
                     ",".join(settings.avatar_allowed_types), ",".join(map(str, settings.avatar_allowed_sizes)),
-                    ", ".join(provider.label for provider in settings.avatar_providers))
+                    ", ".join(provider.label for provider in settings.avatar_providers),
+                    "on" if settings.avatar_type_fallback else "off")
         logger.info("Avatar cache: %s%s, TTL %gs, max. entries: %s", settings.avatar_cache_type,
                     f" ({settings.avatar_cache_dir})" if settings.avatar_cache_type == "file" else "",
                     settings.avatar_cache_ttl, settings.avatar_cache_max_entries or "unlimited")
+        if not _uses_player_id(settings):
+            logger.info("Player UUIDs: not needed (no avatar provider uses {id})")
+        elif not settings.player_uuid_lookup:
+            logger.info("Player UUIDs: lookup disabled, {id} = player name")
+        else:
+            logger.info("Player UUIDs: providers %s, cache %s%s, TTL %gs, max. entries: %s",
+                        ", ".join(settings.player_uuid_providers), settings.player_uuid_cache_type,
+                        f" ({settings.player_uuid_cache_file})" if settings.player_uuid_cache_type == "file" else "",
+                        settings.player_uuid_cache_ttl, settings.player_uuid_cache_max_entries or "unlimited")
         for avatar_type in settings.avatar_allowed_types:
             if not any(avatar_type in provider.templates for provider in settings.avatar_providers):
                 logger.warning("Avatars: no provider for type %s", avatar_type)

@@ -16,7 +16,7 @@ RUN \
     #/venv/bin/pip install --no-cache-dir mcstatus && \
     /venv/bin/pip install --no-cache-dir --disable-pip-version-check -r /app/requirements.txt && \
     chmod +x /app/mcstatus-httpd.py && \
-    # Default directory of the avatar file cache (AVATAR_CACHE_DIR), so a named volume gets the right owner.
+    # Default directory of the file caches (AVATAR_CACHE_DIR, PLAYER_UUID_CACHE_FILE), so a named volume gets the right owner.
     mkdir -p /cache/mcstatus-httpd/avatars
 
 

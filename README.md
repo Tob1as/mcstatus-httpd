@@ -8,7 +8,7 @@ Features:
 * Java: full player list and plugins via [Query](https://minecraft.wiki/w/Query), automatic fallback to the normal status ping if Query is disabled
 * Bedrock: [NetherNet](https://minecraft.wiki/w/NetherNet) (default since Bedrock 1.26.50) and RakNet (legacy), both are tried at the same time by default
 * Both servers are queried in parallel, results are cached (protects the Minecraft server)
-* Optional player avatars (Java, head or body), loaded via mcstatus-httpd with cache and provider fallback
+* Optional player avatars (Java, head or body, flat or 3D), loaded via mcstatus-httpd with cache and provider fallback
 * Optional sub path (`HTTP_PREFIX`), e.g. for a reverse proxy
 * Optional HTTPS
 * Built-in health check command `--healthcheck` for docker-compose (also works with the distroless image)
@@ -62,17 +62,24 @@ Every setting can be set as environment variable or as command line argument (ar
 | `SSL_CERTFILE`                       | `--ssl-certfile`      | `ssl.crt`               | TLS certificate file |
 | `SSL_KEYFILE`                        | `--ssl-keyfile`       | `ssl.key`               | TLS private key file |
 | `AVATAR_ENABLE`                      | `--avatar` / `--no-avatar` | `0`                | Player avatars (Java), see [Player avatars](#player-avatars) |
-| `AVATAR_TYPE`                        | `--avatar-type`       | `head`                  | Default type: `head` or `body` |
+| `AVATAR_TYPE`                        | `--avatar-type`       | `head`                  | Default type: `head`, `body`, `head3d` or `body3d` |
 | `AVATAR_IMAGE_SIZE`                  | `--avatar-image-size` | `64`                    | Default image width in pixels requested from the providers (`8`-`300`), body images are twice as high |
-| `AVATAR_ALLOWED_TYPES`               | `--avatar-allowed-types` | `head,body`          | Types that can be requested with `?type=` (the default type is always allowed) |
+| `AVATAR_ALLOWED_TYPES`               | `--avatar-allowed-types` | `head,body,head3d,body3d` | Types that can be requested with `?type=` (the default type is always allowed) |
 | `AVATAR_ALLOWED_SIZES`               | `--avatar-allowed-sizes` | `16,32,48,64,96,128,192,256,300` | Sizes that can be requested with `?size=` (`8`-`300`, the default size is always allowed) |
-| `AVATAR_PROVIDERS`                   | `--avatar-providers`  | `mc-heads,minotar`      | Avatar providers in order of preference (fallback), built-in names or own URL templates |
+| `AVATAR_PROVIDERS`                   | `--avatar-providers`  | `mc-heads,minotar,crafthead` | Avatar providers in order of preference (fallback), built-in names or own URL templates |
 | `AVATAR_CACHE_TTL`                   | `--avatar-cache-ttl`  | `3600`                  | Seconds an avatar is used before it is loaded again (the old one is kept if loading fails) |
 | `AVATAR_CACHE_TYPE`                  | `--avatar-cache-type` | `memory`                | `memory` (lost on restart) or `file` |
 | `AVATAR_CACHE_DIR`                   | `--avatar-cache-dir`  | `/tmp/mcstatus-httpd/avatars` | Directory of the file cache |
 | `AVATAR_CACHE_MAX_ENTRIES`           | `--avatar-cache-max-entries` | `500`            | Maximum number of cached avatars (every type and size counts), `0` = unlimited |
 | `AVATAR_TLS_VERIFY`                  | `--[no-]avatar-tls-verify` | `1`                | `0` = accept self-signed HTTPS certificates of own URL templates (built-in providers are always verified) |
 | `AVATAR_ONLINE_ONLY`                 | `--[no-]avatar-online-only` | `1`               | Only serve avatars of online players, `0` = any valid player name (see below) |
+| `AVATAR_TYPE_FALLBACK`               | `--[no-]avatar-type-fallback` | `1`             | Serve the flat avatar if a 3D avatar is not available (`head3d` → `head`, `body3d` → `body`) |
+| `PLAYER_UUID_LOOKUP`                 | `--[no-]player-uuid-lookup` | `1`               | Look up the UUID of a player for the avatar providers, `0` = always use the name, see [Player UUIDs](#player-uuids) |
+| `PLAYER_UUID_PROVIDERS`              | `--player-uuid-providers` | `mojang,minecraftservices,playerdb,minetools` | UUID lookup services in order of preference (fallback) |
+| `PLAYER_UUID_CACHE_TTL`              | `--player-uuid-cache-ttl` | `86400`             | Seconds a UUID is used before it is looked up again (the old one is kept if that fails) |
+| `PLAYER_UUID_CACHE_TYPE`             | `--player-uuid-cache-type` | `memory`           | `memory` (lost on restart) or `file` |
+| `PLAYER_UUID_CACHE_FILE`             | `--player-uuid-cache-file` | `/tmp/mcstatus-httpd/uuids.json` | JSON file of the UUID cache |
+| `PLAYER_UUID_CACHE_MAX_ENTRIES`      | `--player-uuid-cache-max-entries` | `1000`      | Maximum number of cached UUIDs, `0` = unlimited |
 | `LOGLEVEL`                           | `--loglevel`          | `INFO`                  | `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL` |
 
 At least one server (Java or Bedrock) must be configured.  
@@ -109,7 +116,15 @@ The name is shown as tooltip on mouse over and on tap.
 * The avatars are loaded **by mcstatus-httpd** and cached, visitors only talk to your server. The avatar providers never see the IP addresses of your visitors.
 * Only players who are currently online are served, other names return 404.  
   With `AVATAR_ONLINE_ONLY=0` any valid Java player name is served, e.g. as profile picture in your forum. Be aware that anybody can then use your service as avatar proxy: random names can push your players out of the cache, delay avatar downloads and cause rate limits at the providers.
-* `AVATAR_TYPE`: default type, `head` (e.g. 64x64 px) or `body` (e.g. 64x128 px, front view).
+* `AVATAR_TYPE`: default type:
+  * `head`: flat head with helm (e.g. 64x64 px)
+  * `body`: flat front view with the outer skin layer (e.g. 64x128 px)
+  * `head3d`: isometric head **without** helm, facing right (e.g. 57x60 px, size and perspective differ a little by provider)
+  * `body3d`: isometric body, facing right (e.g. 64x154 px), only provided by `mc-heads`
+
+  All providers deliver the same images for `head` and `body`. `head3d` is without helm, because `minotar` and `crafthead` have no 3D head with helm.
+
+  If no provider delivers a 3D avatar and none is cached (e.g. `mc-heads` is down, the only provider of `body3d`), the flat avatar is served instead (`head3d` → `head`, `body3d` → `body`), so a website shows an avatar and not the name. The replacement is only cached by the browser for 5 minutes, the 3D avatar is tried again after that. The response header `X-Avatar-Type` shows the delivered type. Disable with `AVATAR_TYPE_FALLBACK=0`.
 * `AVATAR_IMAGE_SIZE`: default image width loaded from the providers (`{size}` in URL templates). The website examples show the avatars in their own size (`AVATAR_SIZE` in the HTML) and scale them sharp (pixel art), so 64 is enough for most pages. Own URL templates without `{size}` always deliver their own size.
 * Type and size can be chosen per request, other values return 400:
   ```
@@ -118,28 +133,44 @@ The name is shown as tooltip on mouse over and on tap.
   ```
   Allowed are the values of `AVATAR_ALLOWED_TYPES` and `AVATAR_ALLOWED_SIZES` (a fixed list, so the number of cached variants stays small).
 * `AVATAR_PROVIDERS`: providers in order of preference. If a provider fails (timeout, error, rate limit), the next one is used and the failing one is paused for a while (rate limits: as long as the provider asks for via `Retry-After`).
-  * Built-in: `mc-heads` ([mc-heads.net](https://mc-heads.net/)), `minotar` ([minotar.net](https://minotar.net/)), both deliver all types and sizes.
-  * Own URL templates with `{name}` and optional `{size}`, e.g. of a server plugin (must deliver PNG). A template is used for the default type, or with a prefix like `head=` or `body=` for this type:
+  * Built-in: `mc-heads` ([mc-heads.net](https://mc-heads.net/), all types), `minotar` ([minotar.net](https://minotar.net/)) and `crafthead` ([crafthead.net](https://crafthead.net/)), both all types except `body3d`. All are called with the UUID of the player (see [Player UUIDs](#player-uuids)). A provider without the requested type is skipped.
+  * Own URL templates with `{name}` (player name) or `{id}` (UUID, or the name if unknown) and optional `{size}`, e.g. of a server plugin (must deliver PNG). A template is used for the default type, or with a prefix like `head=` or `body3d=` for this type:
     ```yml
-    AVATAR_PROVIDERS: "head=http://minecraft:8100/tiles/faces/32x32/{name}.png, mc-heads, minotar"
+    AVATAR_PROVIDERS: "head=http://minecraft:8100/tiles/faces/32x32/{name}.png, mc-heads, minotar, crafthead"
     ```
     If the plugin uses HTTPS with a self-signed certificate, set `AVATAR_TLS_VERIFY: 0` (only for own URL templates, prefer `http://` inside a Docker network).
 * Every Java account has a skin (the default skins Steve, Alex etc. if none was chosen). Names without Mojang account (offline-mode servers, Geyser/Floodgate players like `.Name`, `Anonymous Player` of hidden player lists):
-  * `mc-heads` delivers the default head (Steve), `minotar` answers 404 and the next provider is tried.
+  * `mc-heads` and `crafthead` deliver the default head (Steve), `minotar` answers 404 and the next provider is tried.
   * Names that are no valid Java names (e.g. `.Name`) are not requested at all.
   * If no provider has an avatar, the website shows the name as text, so every player is listed.
 * Cache:
   * Avatars are loaded when they are requested (not on status requests) and used for `AVATAR_CACHE_TTL` seconds. After that the next request loads it again from the providers. If none of them delivers it, the old avatar is kept and used (next attempt after 5 minutes).
   * `AVATAR_CACHE_TYPE=memory` (default): in memory, lost on restart.
-  * `AVATAR_CACHE_TYPE=file`: PNG files in `AVATAR_CACHE_DIR` (`<type>/<size>/<name>.png`), kept across restarts. Without a volume the files are kept on `docker restart`, but lost when the container is recreated (e.g. image update). To keep them, mount a volume:
+  * `AVATAR_CACHE_TYPE=file`: PNG files in `AVATAR_CACHE_DIR` (`<type>/<size>/<name>.png`), kept across restarts. Without a volume the files are kept on `docker restart`, but lost when the container is recreated (e.g. image update). To keep them, mount a volume (here together with the UUID cache, see [Player UUIDs](#player-uuids)):
     ```yml
         environment:
           AVATAR_CACHE_TYPE: file
+          PLAYER_UUID_CACHE_TYPE: file
         volumes:
-          - mcstatus-avatars:/tmp/mcstatus-httpd/avatars
+          - mcstatus-cache:/tmp/mcstatus-httpd
     ```
     A named volume gets the right owner automatically. A bind mount (host directory) must be writable for the user of the container (distroless: UID `65532`, alpine: `nobody` = UID `65534`). With `read_only: true` use a volume or `tmpfs` for the directory.
   * `AVATAR_CACHE_MAX_ENTRIES`: the least recently used avatars are removed above the limit (every type and size counts). `0` = unlimited, recommended only with `AVATAR_ONLINE_ONLY=1`: with any name allowed, random names (mc-heads delivers the default skin for every name) can fill the cache.
+
+### Player UUIDs
+
+The avatar providers recommend UUIDs instead of names (names are slower and more likely to be rate limited). mcstatus-httpd looks up the UUID of a player by name when an avatar is loaded (only if a provider uses `{id}`, the built-in providers do):
+
+* `PLAYER_UUID_PROVIDERS`: lookup services in order of preference. If a service fails (timeout, error, rate limit), the next one is used and the failing one is paused for a while.
+  * `mojang`: [api.mojang.com](https://minecraft.wiki/w/Mojang_API)
+  * `minecraftservices`: api.minecraftservices.com (also Mojang, other server)
+  * `playerdb`: [playerdb.co](https://playerdb.co/)
+  * `minetools`: [api.minetools.eu](https://api.minetools.eu/)
+* If a service does not know the name (no Mojang account) or no service answers, the name is used instead, so the avatar providers still get a request.
+* UUIDs are cached for `PLAYER_UUID_CACHE_TTL` seconds (unknown names at most 1 hour). After that the next avatar download looks it up again, if that fails the old UUID is kept.
+* `PLAYER_UUID_CACHE_TYPE=file` keeps the UUIDs across restarts in `PLAYER_UUID_CACHE_FILE` (JSON), see the volume example above.
+* `PLAYER_UUID_LOOKUP=0` disables the lookup, `{id}` is then always the name.
+* The avatar cache files are named by player name, they do not change.
 
 ## Website examples
 
@@ -149,7 +180,7 @@ The name is shown as tooltip on mouse over and on tap.
 Tip: Serve mcstatus-httpd on the same domain as your website via reverse proxy and `HTTP_PREFIX` (e.g. `https://example.com/mcstatus`).  
 A website served via HTTPS cannot load data from a plain `http://` URL.  
 On a different domain this works too (CORS), by default every website is allowed, see `HTTP_CORS_ORIGIN` to restrict it.  
-Settings at the top of the script: `MCSTATUS_URL`, `REFRESH_SECONDS`, `DATE_FORMAT` (`''` = page/browser language, e.g. `de-DE` or `iso`), `SHOW_AVATARS`, `AVATAR_TYPE` (`''` = default of mcstatus-httpd, `head` or `body`), `AVATAR_SIZE` (height of a head in px, default `20`) and `TEXT`.
+Settings at the top of the script: `MCSTATUS_URL`, `REFRESH_SECONDS`, `DATE_FORMAT` (`''` = page/browser language, e.g. `de-DE` or `iso`), `SHOW_AVATARS`, `AVATAR_TYPE` (`''` = default of mcstatus-httpd, `head`, `body`, `head3d` or `body3d`), `AVATAR_SIZE` (height of a head in px, default `20`) and `TEXT`.
 
 ## Use
 
