@@ -145,6 +145,9 @@ jobs:
           NAME="mcstatus-httpd-${VERSION}"
           mkdir -p "dist/${NAME}"
           cp mcstatus-httpd.py requirements.txt README.md LICENSE "dist/${NAME}/"
+          # Website examples, only the HTML files (not the screenshot of the README).
+          mkdir -p "dist/${NAME}/examples"
+          cp examples/*.html "dist/${NAME}/examples/"
 
           # Set the release version as default in the packaged script (instead of "dev").
           sed -i -E "s/^DEFAULT_VERSION: Final = \"dev\"(\r?)$/DEFAULT_VERSION: Final = \"${VERSION}\"\1/" "dist/${NAME}/mcstatus-httpd.py"

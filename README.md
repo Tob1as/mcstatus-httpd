@@ -177,6 +177,10 @@ The avatar providers recommend UUIDs instead of names (names are slower and more
 * [examples/index.html](examples/index.html): status page for any website (same box code as the WoltLab box, incl. the needed CSS)
 * [examples/wsc-box.html](examples/wsc-box.html): status box for [WoltLab Suite](https://www.woltlab.com/) (ACP → Appearance → Boxes → box type "HTML" [*](https://manual.woltlab.com/en/boxes/)), shows status, players, version, MOTD etc. Remove the lines you do not need.
 
+The WoltLab box in a forum sidebar (with player avatar, MOTD pixelated):
+
+<img src="examples/wsc-box.png" alt="Minecraft server status box of mcstatus-httpd in WoltLab Suite" width="310">
+
 Tip: Serve mcstatus-httpd on the same domain as your website via reverse proxy and `HTTP_PREFIX` (e.g. `https://example.com/mcstatus`).  
 A website served via HTTPS cannot load data from a plain `http://` URL.  
 On a different domain this works too (CORS), by default every website is allowed, see `HTTP_CORS_ORIGIN` to restrict it.  
@@ -240,7 +244,7 @@ The GitHub workflow builds the Docker image (`ghcr.io/tob1as/mcstatus-httpd`):
 | Push of a version tag, e.g. `v2.0.0`          | `2.0.0`                        | `2.0.0`, `2.0`, `2`, `latest`, `<build date>.<commit hash>`, `<commit hash>` |
 | Manual start in the GitHub GUI or schedule    | `<build date>.<commit hash>`   | `dev`, `<build date>.<commit hash>`, `<commit hash>` |
 
-A version tag additionally creates a GitHub release with `mcstatus-httpd-<version>.zip` and `.tar.gz` (script, `requirements.txt`, `README.md`, `LICENSE`).  
+A version tag additionally creates a GitHub release with `mcstatus-httpd-<version>.zip` and `.tar.gz` (script, `requirements.txt`, `README.md`, `LICENSE` and the website examples `examples/*.html`).  
 Pre-releases like `v2.0.0-rc1` only get the tag `2.0.0-rc1` and are marked as pre-release.
 
 ```sh
