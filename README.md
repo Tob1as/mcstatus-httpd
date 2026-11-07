@@ -197,7 +197,7 @@ A website served via HTTPS cannot load data from a plain `http://` URL.
 On a different domain this works too (CORS), by default every website is allowed, see `HTTP_CORS_ORIGIN` to restrict it.  
 Settings at the top of the script: `MCSTATUS_URL`, `REFRESH_SECONDS`, `DATE_FORMAT` (`''` = page/browser language, e.g. `de-DE` or `iso`), `LANGUAGE`, `SHOW_AVATARS`, `AVATAR_TYPE` (`''` = default of mcstatus-httpd, `head`, `body`, `head3d` or `body3d`), `AVATAR_SIZE` (height of a head in px, default `20`) and `TEXTS`.
 
-Languages: the boxes are in English and German. The language is chosen automatically: the language of the page (`<html lang>`, in WSC the language of the user), on pages without it the language of the browser, otherwise English. `LANGUAGE = 'de'` sets a fixed language. To add a language, copy the `en` block of `TEXTS` in the script (e.g. as `fr`) and translate it.
+Languages: the boxes are in English and German. The language is chosen automatically: the language of the page (`<html lang>`, in WSC the language of the user), on pages without it the language of the browser, otherwise English. `LANGUAGE = 'de'` sets a fixed language. To add a language, copy the `en` block of `TEXTS` in the script (e.g. as `es`) and translate it.
 
 ## Use
 
