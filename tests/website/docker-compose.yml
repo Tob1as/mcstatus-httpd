@@ -1,0 +1,48 @@
+# Test environment for the website examples (examples/*.html) with mock and live data.
+# See README.md in this folder.
+#
+# Start:  docker compose -f tests/website/docker-compose.yml up -d --build
+# Open:   http://localhost:18092/
+# Stop:   docker compose -f tests/website/docker-compose.yml down --rmi all
+
+services:
+
+  # Real mcstatus-httpd built from this repository: live data of the demo servers
+  # (scenario "live") and the avatars of all scenarios.
+  mcstatus-httpd:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      target: production
+      args:
+        VERSION: test
+    image: ghcr.io/tob1as/mcstatus-httpd:test
+    container_name: mcstatus-httpd-test
+    environment:
+      # Demo servers of https://mcstatus.io
+      MINECRAFT_JAVA_SERVER: demo.mcstatus.io
+      MINECRAFT_BEDROCK_SERVER: demo.mcstatus.io
+      HTTP_PREFIX: mcstatus
+      AVATAR_ENABLE: 1
+      AVATAR_ONLINE_ONLY: 0                # avatars for every player name of the mock data
+      #AVATAR_TYPE: head                   # default type: head, body, head3d or body3d
+      #AVATAR_PROVIDERS: mc-heads,minotar,crafthead
+      #PLAYER_UUID_LOOKUP: 0               # 0 = avatar providers get the name instead of the UUID
+      #LOGLEVEL: DEBUG
+
+  # nginx with njs: example pages, mock JSON and proxy to mcstatus-httpd.
+  web:
+    image: nginx:alpine
+    container_name: mcstatus-web-test
+    ports:
+      - 18092:80/tcp
+    volumes:
+      - ../../examples:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./mock.js:/etc/nginx/njs/mock.js:ro
+      - ./index.html:/test/index.html:ro
+      - ./avatar-check.html:/test/avatar-check.html:ro
+      - ./wsc:/test/wsc:ro
+      - ./scenarios:/test/scenarios:ro
+    depends_on:
+      - mcstatus-httpd

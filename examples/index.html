@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,23 +9,44 @@
     <link rel="shortcut icon" sizes="16x16" href="data:image/x-icon;base64,UklGRkIEAABXRUJQVlA4WAoAAAAwAAAAHwAAHwAASUNDUAwCAAAAAAIMbGNtcwIQAABtbnRyUkdCIFhZWiAH3AABABkAAwApADlhY3NwQVBQTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9tYAAQAAAADTLWxjbXMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAApkZXNjAAAA/AAAAF5jcHJ0AAABXAAAAAt3dHB0AAABaAAAABRia3B0AAABfAAAABRyWFlaAAABkAAAABRnWFlaAAABpAAAABRiWFlaAAABuAAAABRyVFJDAAABzAAAAEBnVFJDAAABzAAAAEBiVFJDAAABzAAAAEBkZXNjAAAAAAAAAANjMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB0ZXh0AAAAAEZCAABYWVogAAAAAAAA9tYAAQAAAADTLVhZWiAAAAAAAAADFgAAAzMAAAKkWFlaIAAAAAAAAG+iAAA49QAAA5BYWVogAAAAAAAAYpkAALeFAAAY2lhZWiAAAAAAAAAkoAAAD4QAALbPY3VydgAAAAAAAAAaAAAAywHJA2MFkghrC/YQPxVRGzQh8SmQMhg7kkYFUXdd7WtwegWJsZp8rGm/fdPD6TD//0FMUEjZAAAAAYCDbdux5cm2bZuba3Jt1uZGG5tt1+Q227Zt2/5+/++3NUbEBADtbH5zLQaAnsG09gHDNsJFUcmlHmHkv8MeHCh4A+b+MKqvjWaM9DDbtX9gNJ9nKtOmW3KH0b0cJkhNImYXQ/nd48pKxuw58YshfqzXAwDJTQzHdACQ3sMjB7fsfzEZXHIAQHITjzQAYHbs+0F1n6cB5KIhG0i+2mxZgapGxjV9s/78QCuTZcMHbScJ8kAvt9vYH7XnchMGQCgVsUfhp8uBHRDrF9xh2HKwMKBndR2s0AI6AQBWUDggLgEAALAHAJ0BKiAAIAA+nUifSyWkIqGoCACwE4lsAJ0yhHmFoDbZ8+3ZHy/YG0oKDqTRD9j+zjPjXMzi/erDlb4D2JN0qJ/eYAAA/vN06k2xoManR3VlxSw2xlQaia/bpBgBJl6/EV6fCUHEppnHrvpYdw9oD59YL+sE6jhyrr9orCyVvka0DjXj6OBYGwQ8jOLNEmP8scsJJ+PvKSJA72pVWsqFh+O8B4FU8ciK1VdMw4aOzkbc6XPt87v3yVRD393tEzTH2enHOv51GYADtr4ZscdsJ+ognrnCNwllIBIl5mVBqBa0b/lwgnIiWgdUIMKUsQQIp4rjZx8955E2wJwmEQdimIeTcN55garsk1plZW2DMuCkBnhLQriCYZ1TchiPSCtxu47SAS4LasxTMNAA" />
     <!--<link rel="stylesheet" href="styles.css">-->
     <style>
-    /* Page style, adjust as you like. */
-    body { margin: 20px; font-family: system-ui, "Segoe UI", Arial, sans-serif; font-size: 14px; color: #3a3a3d; }
-    .mcstatusBox { max-width: 360px; padding: 15px 20px; background: #ecf1f7; }
+    /* Page style, adjust as you like. Neutral gray, light and dark mode follow the system setting. */
+    :root {
+        color-scheme: light dark;
+        --page-bg: #f4f4f5; --card-bg: #fff; --border: #e4e4e7; --text: #18181b; --muted: #71717a;
+        --green: #16a34a; --red: #dc2626;
+    }
+    @media (prefers-color-scheme: dark) {
+        :root { --page-bg: #18181b; --card-bg: #27272a; --border: #3f3f46; --text: #e4e4e7; --muted: #a1a1aa;
+                --green: #15803d; --red: #b91c1c; }
+    }
+    body { margin: 0; padding: 32px 16px; background: var(--page-bg); color: var(--text);
+           font-family: system-ui, "Segoe UI", Roboto, Arial, sans-serif; font-size: 14px; line-height: 1.5; }
+    main { max-width: 900px; margin: 0 auto; }
+    h1 { margin: 0 0 20px; font-size: 24px; font-weight: 600; }
+    /* Each server as a card. Side by side or below each other is decided by the box itself (container query). */
+    main .mcstatusBox .mcstatusServer { padding: 16px 20px; background: var(--card-bg); border: 1px solid var(--border);
+                                        border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, .06); }
+    main .mcstatusBox .mcstatusTitle { margin-bottom: 8px; font-size: 16px; }
+    main .mcstatusBox .mcstatusMessage, main .mcstatusBox .mcstatusFooter { color: var(--muted); }
+    main .mcstatusBox .mcstatusFooter { margin-top: 12px; }
 
     /* CSS classes the status box uses from WSC (see wsc-box.html),
        defined here so the same box code works on any website. */
-    dl.plain.dataList { display: grid; grid-template-columns: auto 1fr; column-gap: 15px; row-gap: 2px; margin: 0; }
-    dl.plain.dataList dt { color: #7d8287; }
+    dl.plain.dataList { display: grid; grid-template-columns: auto 1fr; margin: 0; }
+    dl.plain.dataList dt, dl.plain.dataList dd { padding: 6px 0; border-top: 1px solid var(--border); }
+    dl.plain.dataList dt:first-of-type, dl.plain.dataList dt:first-of-type + dd { border-top: 0; }
+    dl.plain.dataList dt { padding-right: 15px; color: var(--muted); }
     dl.plain.dataList dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
-    .badge { display: inline-block; padding: 1px 6px; border-radius: 2px; font-size: 12px; line-height: 1.5; color: #fff; background: #7d8287; }
-    .badge.label.green { background: #008000; }
-    .badge.label.red { background: #c00; }
+    .badge { display: inline-block; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 600; line-height: 1.7; color: #fff; background: var(--muted); }
+    .badge.label.green { background: var(--green); }
+    .badge.label.red { background: var(--red); }
     </style>
 </head>
 
 <body>
     <!--<script src="scripts.js"></script>-->
+<main>
+    <h1>Minecraft Server</h1>
 
 <!--
     Minecraft server status box (mcstatus-httpd), same code as wsc-box.html.
@@ -33,15 +54,22 @@
 
     Customizing:
       - Adjust MCSTATUS_URL in the script below.
-        Optional settings there: REFRESH_SECONDS, DATE_FORMAT, SHOW_AVATARS, AVATAR_TYPE, AVATAR_SIZE and TEXT.
+        Optional settings there: REFRESH_SECONDS, DATE_FORMAT, LANGUAGE, SHOW_AVATARS, AVATAR_TYPE, AVATAR_SIZE and TEXTS.
       - Remove a whole <section> if you do not run that server (Java or Bedrock).
       - Remove any <dt>/<dd> pair you do not need, the script skips missing fields.
-      - Translate the labels (<dt>) and the TEXT values in the script.
+      - Texts in English and German (TEXTS in the script), the language is chosen automatically
+        (language of the browser). To add a language, copy the 'en' block of TEXTS.
       - Fields without a value (e.g. empty player list) are hidden automatically.
 -->
 <style>
 .mcstatusBox [hidden] { display: none !important; }
-.mcstatusBox .mcstatusServer + .mcstatusServer { margin-top: 15px; }
+/* Java and Bedrock side by side if the box is wide enough (e.g. footer or own page), otherwise
+   below each other (e.g. sidebar or phone). The box width counts, not the screen width. */
+.mcstatusBox { container: mcstatus / inline-size; }
+.mcstatusBox .mcstatusServers { display: grid; gap: 15px 30px; }
+@container mcstatus (min-width: 560px) {
+    .mcstatusBox .mcstatusServers { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+}
 .mcstatusBox .mcstatusTitle { font-size: inherit; font-weight: 600; margin: 0 0 5px; }
 .mcstatusBox [data-field="motd"] { white-space: pre-line; }
 /* Footer: time of the last query on the left, link to the project (GitHub icon) on the right. */
@@ -61,43 +89,45 @@
 </style>
 
 <div class="mcstatusBox">
-    <p class="mcstatusMessage">Loading ...</p>
+    <p class="mcstatusMessage" data-text="loading">Loading ...</p>
 
-    <!-- Minecraft Java Edition -->
-    <section class="mcstatusServer" data-server="java" hidden>
-        <h3 class="mcstatusTitle">Java Edition</h3>
-        <dl class="plain dataList">
-            <dt>Status</dt>      <dd data-field="status"></dd>
-            <dt>Address</dt>     <dd data-field="address"></dd>
-            <dt>Port</dt>        <dd data-field="port"></dd>
-            <dt>Players</dt>     <dd data-field="players"></dd>
-            <dt>Player list</dt> <dd data-field="playerList"></dd>
-            <dt>Version</dt>     <dd data-field="version"></dd>
-            <dt>Software</dt>    <dd data-field="brand"></dd>
-            <dt>Plugins</dt>     <dd data-field="plugins"></dd>
-            <dt>Map</dt>         <dd data-field="map"></dd>
-            <dt>MOTD</dt>        <dd data-field="motd"></dd>
-        </dl>
-    </section>
+    <div class="mcstatusServers">
+        <!-- Minecraft Java Edition -->
+        <section class="mcstatusServer" data-server="java" hidden>
+            <h3 class="mcstatusTitle" data-text="java">Java Edition</h3>
+            <dl class="plain dataList">
+                <dt data-text="status">Status</dt>          <dd data-field="status"></dd>
+                <dt data-text="address">Address</dt>        <dd data-field="address"></dd>
+                <dt data-text="port">Port</dt>              <dd data-field="port"></dd>
+                <dt data-text="players">Players</dt>        <dd data-field="players"></dd>
+                <dt data-text="playerList">Player list</dt> <dd data-field="playerList"></dd>
+                <dt data-text="version">Version</dt>        <dd data-field="version"></dd>
+                <dt data-text="software">Software</dt>      <dd data-field="brand"></dd>
+                <dt data-text="plugins">Plugins</dt>        <dd data-field="plugins"></dd>
+                <dt data-text="map">Map</dt>                <dd data-field="map"></dd>
+                <dt data-text="motd">MOTD</dt>              <dd data-field="motd"></dd>
+            </dl>
+        </section>
 
-    <!-- Minecraft Bedrock Edition -->
-    <section class="mcstatusServer" data-server="bedrock" hidden>
-        <h3 class="mcstatusTitle">Bedrock Edition</h3>
-        <dl class="plain dataList">
-            <dt>Status</dt>      <dd data-field="status"></dd>
-            <dt>Address</dt>     <dd data-field="address"></dd>
-            <dt>Port</dt>        <dd data-field="port"></dd>
-            <dt>Players</dt>     <dd data-field="players"></dd>
-            <dt>Version</dt>     <dd data-field="version"></dd>
-            <dt>Game mode</dt>   <dd data-field="gamemode"></dd>
-            <dt>Map</dt>         <dd data-field="map"></dd>
-            <dt>MOTD</dt>        <dd data-field="motd"></dd>
-        </dl>
-    </section>
+        <!-- Minecraft Bedrock Edition -->
+        <section class="mcstatusServer" data-server="bedrock" hidden>
+            <h3 class="mcstatusTitle" data-text="bedrock">Bedrock Edition</h3>
+            <dl class="plain dataList">
+                <dt data-text="status">Status</dt>          <dd data-field="status"></dd>
+                <dt data-text="address">Address</dt>        <dd data-field="address"></dd>
+                <dt data-text="port">Port</dt>              <dd data-field="port"></dd>
+                <dt data-text="players">Players</dt>        <dd data-field="players"></dd>
+                <dt data-text="version">Version</dt>        <dd data-field="version"></dd>
+                <dt data-text="gamemode">Game mode</dt>     <dd data-field="gamemode"></dd>
+                <dt data-text="map">Map</dt>                <dd data-field="map"></dd>
+                <dt data-text="motd">MOTD</dt>              <dd data-field="motd"></dd>
+            </dl>
+        </section>
+    </div>
 
     <!-- Time of the last query and link to the project (the <a> is optional) -->
     <div class="mcstatusFooter">
-        <p class="mcstatusUpdated" hidden>Last update: <span data-field="date"></span></p>
+        <p class="mcstatusUpdated" hidden><span data-text="lastUpdate">Last update</span>: <span data-field="date"></span></p>
         <a class="mcstatusSource" href="https://github.com/Tob1as/mcstatus-httpd" target="_blank" rel="noopener noreferrer"
            aria-label="github.com/Tob1as/mcstatus-httpd" data-name="github.com/Tob1as/mcstatus-httpd">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222 0 1.606-.014 2.898-.014 3.293 0 .322.216.694.825.576C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
@@ -117,6 +147,10 @@
     //   'de-DE' = fixed language, e.g. 'de-DE' -> 03.11.2026, 22:49 / 'en-US' -> 11/03/2026, 10:49 PM
     //   'iso'   = 2026-11-03 22:49
     const DATE_FORMAT = '';
+    // Language of the texts: '' = automatic, or fixed, e.g. 'de'.
+    // Automatic: language of the page (<html lang="...">, in WSC the language of the user),
+    // without it the language of the browser. A language missing in TEXTS shows English.
+    const LANGUAGE = '';
     // Show avatars instead of player names (Java), only works if mcstatus-httpd
     // provides them (AVATAR_ENABLE), otherwise the names are shown as text.
     const SHOW_AVATARS = true;
@@ -125,12 +159,24 @@
     const AVATAR_TYPE = '';
     // Height of a head avatar in pixels, body avatars (body, body3d) are 2.5 times as high.
     const AVATAR_SIZE = 20;
-    // Texts generated by the script, translate if needed.
-    const TEXT = {
-        online: 'Online',
-        offline: 'Offline',
-        error: 'Status currently not available.',
-        noServer: 'No server configured.',
+    // Texts per language (labels with data-text="..." in the HTML and texts of the script).
+    // To add a language, copy the 'en' block (e.g. as fr: { ... }) and translate the values,
+    // missing texts are taken from 'en'.
+    const TEXTS = {
+        en: {
+            loading: 'Loading ...', error: 'Status currently not available.', noServer: 'No server configured.',
+            online: 'Online', offline: 'Offline', lastUpdate: 'Last update',
+            java: 'Java Edition', bedrock: 'Bedrock Edition',
+            status: 'Status', address: 'Address', port: 'Port', players: 'Players', playerList: 'Player list',
+            version: 'Version', software: 'Software', plugins: 'Plugins', gamemode: 'Game mode', map: 'Map', motd: 'MOTD',
+        },
+        de: {
+            loading: 'Wird geladen ...', error: 'Status derzeit nicht abrufbar.', noServer: 'Kein Server konfiguriert.',
+            online: 'Online', offline: 'Offline', lastUpdate: 'Letzte Aktualisierung',
+            java: 'Java Edition', bedrock: 'Bedrock Edition',
+            status: 'Status', address: 'Adresse', port: 'Port', players: 'Spieler', playerList: 'Spielerliste',
+            version: 'Version', software: 'Software', plugins: 'Plugins', gamemode: 'Spielmodus', map: 'Welt', motd: 'MOTD',
+        },
     };
     // ------------------------------------------------------------------------
 
@@ -141,6 +187,17 @@
         console.error('mcstatus: <div class="mcstatusBox"> must be placed directly before the script.');
         return;
     }
+
+    // Language: LANGUAGE, otherwise the page language, without it the browser languages, fallback English.
+    // Only the main language counts, e.g. 'de-AT' -> 'de'.
+    const wanted = LANGUAGE || document.documentElement.lang;
+    const language = (wanted ? [wanted] : navigator.languages || [navigator.language])
+        .map((code) => String(code).toLowerCase().split('-')[0])
+        .find((code) => TEXTS[code]) || 'en';
+    const TEXT = { ...TEXTS.en, ...TEXTS[language] };
+    box.querySelectorAll('[data-text]').forEach((element) => {
+        element.textContent = TEXT[element.dataset.text] ?? element.textContent;
+    });
     const message = box.querySelector('.mcstatusMessage');
     const updated = box.querySelector('.mcstatusUpdated');
     // Avatars are loaded relative to MCSTATUS_URL, e.g. '/mcstatus' -> '/mcstatus/avatar/<name>'.
@@ -313,6 +370,7 @@
     }
 })();
 </script>
+</main>
 
 </body>
 </html>

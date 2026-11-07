@@ -1,0 +1,106 @@
+/*
+    Approximation of the default style of WSC 6 for the test environment.
+    Own CSS (no code of WSC), the values were measured on a WSC page with the default style
+    (tools/wsc-styles.mjs):
+    only page frame, sidebar and footer boxes, CMS page title and the classes the status boxes use
+    (section.box, .boxTitle, .boxContent, dl.plain.dataList, .badge.label.green/.red).
+    Light and dark like WSC: html[data-color-scheme="light|dark"] (set by frame.html).
+*/
+html[data-color-scheme="light"] {
+    --bg: #fafafa; --text: #3a3a3d; --dimmed: #696d72; --link: #2671a6;
+    --header-bg: #3a6d9c; --header-text: #fff; --header-menu: #24425f;
+    --box-bg: #ecf1f7; --box-text: #3a3a3d;
+    --footerboxes-bg: #eceff1; --footerboxes-text: #3a3a3d; --footerboxes-title: #3a3a3d;
+    --footer-bg: #3a6d9c; --footer-text: #d9dcde;
+    --badge-bg: #7d8287; --badge-text: #fff;
+    --badge-green-bg: #008500; --badge-green-text: #efe;
+    --badge-red-bg: #c00; --badge-red-text: #fee;
+    color-scheme: light;
+}
+html[data-color-scheme="dark"] {
+    --bg: #1a1d21; --text: #d1d2d3; --dimmed: #8b8d91; --link: #1d9bd1;
+    --header-bg: #1e2734; --header-text: #d1d2d3; --header-menu: #2b384a;
+    --box-bg: #1e2734; --box-text: #d1d2d3;
+    --footerboxes-bg: #1a222d; --footerboxes-text: #9e9e9e; --footerboxes-title: #d1d2d3;
+    --footer-bg: #1e2734; --footer-text: #9e9e9e;
+    --badge-bg: #4a4d52; --badge-text: #d1d2d3;
+    --badge-green-bg: #1b5e20; --badge-green-text: #cfdbcf;
+    --badge-red-bg: #c1183d; --badge-red-text: #f9e7ea;
+    color-scheme: dark;
+}
+
+body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.48 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell,
+          "Fira Sans", "Droid Sans", "Helvetica Neue", Arial, sans-serif;
+}
+a { color: var(--link); text-decoration: none; }
+.layoutBoundary { box-sizing: border-box; max-width: 1400px; margin: 0 auto; padding: 0 20px; }
+
+/* Page header: menu bar and logo */
+.pageHeaderContainer { background: var(--header-bg); color: var(--header-text); }
+.pageHeaderMenu { background: var(--header-menu); }
+.pageHeaderMenu .layoutBoundary { display: flex; gap: 2px; }
+.pageHeaderMenu a { display: block; padding: 0 15px; line-height: 50px; color: var(--header-text); }
+.pageHeaderLogo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 30px;
+                  padding: 35px 0; font-size: 28px; }
+
+/* Content with sidebar on the right, below each other on small screens */
+.main { padding: 30px 0; }
+.main > .layoutBoundary { display: flex; align-items: flex-start; }
+.content { flex: 1; min-width: 0; }
+.contentTitle { margin: 0 0 20px; font-size: 28px; font-weight: 600; line-height: 1.05; }
+.contentHeader .contentTitle { margin: 0; }
+
+/* Text of the content (placeholder text of the test page) */
+.htmlContent p, .htmlContent ul { margin: 0 0 15px; }
+.htmlContent ul { padding-left: 30px; }
+.sectionTitle { margin: 30px 0 15px; font-size: 23px; font-weight: 400; line-height: 1.28; }
+.testInfo { margin: 20px 0; font-size: 12px; color: var(--dimmed); }
+.sidebar { flex: none; box-sizing: border-box; width: 310px; margin-left: 30px; }
+@media (max-width: 1024px) {
+    .main > .layoutBoundary { display: block; }
+    .sidebar { width: auto; margin: 30px 0 0; }
+}
+
+/* Boxes */
+section.box { box-sizing: border-box; padding: 20px; border-radius: 4px; background: var(--box-bg); color: var(--box-text); }
+section.box + section.box { margin-top: 30px; }
+.boxTitle { margin: 0; font-size: 18px; font-weight: 400; line-height: 1.28; }
+.boxTitle a { color: inherit; }
+.boxContent { margin-top: 20px; }
+/* Box with image: the image is centered in a 100 px high area and cut off above and below */
+.boxImage { display: flex; align-items: center; justify-content: center; height: 100px; overflow: hidden; margin-bottom: 20px; }
+.boxImage img { display: block; }
+
+/* Footer boxes: two columns without box background */
+.boxesFooterBoxes { padding: 60px 0; background: var(--footerboxes-bg); color: var(--footerboxes-text); }
+.boxesFooterBoxes .boxContainer { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+.boxesFooterBoxes section.box { padding: 0; border-radius: 0; background: none; color: inherit; }
+.boxesFooterBoxes section.box + section.box { margin-top: 0; }
+.boxesFooterBoxes .boxTitle { color: var(--footerboxes-title); }
+@media (max-width: 768px) {
+    .boxesFooterBoxes .boxContainer { grid-template-columns: 1fr; }
+}
+
+/* Page footer */
+.pageFooter { padding: 50px 0; background: var(--footer-bg); color: var(--footer-text); }
+.pageFooter a { color: inherit; }
+
+/* Lists of the statistics box: label left (dimmed), value right */
+dl.plain.dataList { margin: 0; }
+dl.plain.dataList::after { content: ""; display: block; clear: both; }
+dl.plain.dataList dt { float: left; clear: right; margin: 0 4px 0 0; color: var(--dimmed); }
+dl.plain.dataList dt::after { content: ":"; }  /* WSC shows the labels with a colon */
+dl.plain.dataList dd { float: right; margin: 0 0 3px; text-align: right; }
+
+/* Labels */
+.badge { display: inline-block; max-width: 100%; padding: 2px 6px; border-radius: 2px; font-size: 12px; line-height: 1.28;
+         background: var(--badge-bg); color: var(--badge-text); }
+.badge.label.green { background: var(--badge-green-bg); color: var(--badge-green-text); }
+.badge.label.red { background: var(--badge-red-bg); color: var(--badge-red-text); }
+
+/* Switches of the test page in the header (not WSC) */
+.testSwitches { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0; font-size: 14px; }
+.testSwitches a { color: inherit; opacity: .75; }
+.testSwitches a.active { font-weight: 600; opacity: 1; }

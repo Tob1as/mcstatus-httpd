@@ -1,0 +1,8 @@
+{"date": "2026-11-06T12:00:00+00:00",
+ "java": {"hostname": "minecraft.example.com", "port": 25565, "online": true,
+  "software": {"version": "1.21.4", "brand": null, "plugins": []},
+  "players": {"online": 47, "max": 100, "list": ["Notch", "jeb_", "Dinnerbone", "Grumm", "PassTheMayo", "Technoblade", "Dream", "Grian", "MumboJumbo", "Xisuma", "iskall85", "TangoTek"]},
+  "map": null, "motd": "Status fallback (no Query): only a sample of 12 names"},
+ "bedrock": {"hostname": "minecraft.example.com", "port": 19132, "online": true,
+  "software": {"version": "1.21.50", "brand": null, "protocol": 766},
+  "players": {"online": 5, "max": 50}, "map": "Bedrock level", "motd": "NetherNet (brand null)", "gamemode": "Creative"}}

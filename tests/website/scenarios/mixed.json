@@ -1,0 +1,6 @@
+{"date": "2026-11-06T12:00:00+00:00",
+ "java": {"hostname": "minecraft.example.com", "port": 25565, "online": true,
+  "software": {"version": "1.21.4", "brand": "Paper on 1.21.4", "plugins": []},
+  "players": {"online": 2, "max": 20, "list": ["Notch", "Grian"]},
+  "map": "world", "motd": "Java online"},
+ "bedrock": {"hostname": "minecraft.example.com", "port": 19132, "online": false, "error": "Server unreachable"}}

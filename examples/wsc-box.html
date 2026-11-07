@@ -4,21 +4,29 @@
 
     Setup (https://manual.woltlab.com/en/boxes/):
       1. ACP -> Appearance -> Boxes -> Add Box
-      2. Box type "HTML", choose a position (e.g. sidebar) and a title (e.g. "Minecraft").
+      2. Box type "HTML", choose a position (e.g. sidebar or footer) and a title (e.g. "Minecraft").
+         In a wide position (e.g. footer) Java and Bedrock are shown side by side automatically.
       3. Paste this code as content and adjust MCSTATUS_URL in the script below.
-         Optional settings there: REFRESH_SECONDS, DATE_FORMAT, SHOW_AVATARS, AVATAR_TYPE, AVATAR_SIZE and TEXT.
+         Optional settings there: REFRESH_SECONDS, DATE_FORMAT, LANGUAGE, SHOW_AVATARS, AVATAR_TYPE, AVATAR_SIZE and TEXTS.
 
     Customizing:
       - Remove a whole <section> if you do not run that server (Java or Bedrock).
       - Remove any <dt>/<dd> pair you do not need, the script skips missing fields.
-      - Translate the labels (<dt>) and the TEXT values in the script.
+      - Texts in English and German (TEXTS in the script), the language is chosen automatically
+        (in WSC the language of the user). To add a language, copy the 'en' block of TEXTS.
       - The lists use the CSS classes of the WoltLab statistics box ("plain dataList"),
         so the box follows the style of your forum.
       - Fields without a value (e.g. empty player list) are hidden automatically.
 -->
 <style>
 .mcstatusBox [hidden] { display: none !important; }
-.mcstatusBox .mcstatusServer + .mcstatusServer { margin-top: 15px; }
+/* Java and Bedrock side by side if the box is wide enough (e.g. footer or own page), otherwise
+   below each other (e.g. sidebar or phone). The box width counts, not the screen width. */
+.mcstatusBox { container: mcstatus / inline-size; }
+.mcstatusBox .mcstatusServers { display: grid; gap: 15px 30px; }
+@container mcstatus (min-width: 560px) {
+    .mcstatusBox .mcstatusServers { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+}
 .mcstatusBox .mcstatusTitle { font-size: inherit; font-weight: 600; margin: 0 0 5px; }
 .mcstatusBox [data-field="motd"] { white-space: pre-line; }
 /* Footer: time of the last query on the left, link to the project (GitHub icon) on the right. */
@@ -38,43 +46,45 @@
 </style>
 
 <div class="mcstatusBox">
-    <p class="mcstatusMessage">Loading ...</p>
+    <p class="mcstatusMessage" data-text="loading">Loading ...</p>
 
-    <!-- Minecraft Java Edition -->
-    <section class="mcstatusServer" data-server="java" hidden>
-        <h3 class="mcstatusTitle">Java Edition</h3>
-        <dl class="plain dataList">
-            <dt>Status</dt>      <dd data-field="status"></dd>
-            <dt>Address</dt>     <dd data-field="address"></dd>
-            <dt>Port</dt>        <dd data-field="port"></dd>
-            <dt>Players</dt>     <dd data-field="players"></dd>
-            <dt>Player list</dt> <dd data-field="playerList"></dd>
-            <dt>Version</dt>     <dd data-field="version"></dd>
-            <dt>Software</dt>    <dd data-field="brand"></dd>
-            <dt>Plugins</dt>     <dd data-field="plugins"></dd>
-            <dt>Map</dt>         <dd data-field="map"></dd>
-            <dt>MOTD</dt>        <dd data-field="motd"></dd>
-        </dl>
-    </section>
+    <div class="mcstatusServers">
+        <!-- Minecraft Java Edition -->
+        <section class="mcstatusServer" data-server="java" hidden>
+            <h3 class="mcstatusTitle" data-text="java">Java Edition</h3>
+            <dl class="plain dataList">
+                <dt data-text="status">Status</dt>          <dd data-field="status"></dd>
+                <dt data-text="address">Address</dt>        <dd data-field="address"></dd>
+                <dt data-text="port">Port</dt>              <dd data-field="port"></dd>
+                <dt data-text="players">Players</dt>        <dd data-field="players"></dd>
+                <dt data-text="playerList">Player list</dt> <dd data-field="playerList"></dd>
+                <dt data-text="version">Version</dt>        <dd data-field="version"></dd>
+                <dt data-text="software">Software</dt>      <dd data-field="brand"></dd>
+                <dt data-text="plugins">Plugins</dt>        <dd data-field="plugins"></dd>
+                <dt data-text="map">Map</dt>                <dd data-field="map"></dd>
+                <dt data-text="motd">MOTD</dt>              <dd data-field="motd"></dd>
+            </dl>
+        </section>
 
-    <!-- Minecraft Bedrock Edition -->
-    <section class="mcstatusServer" data-server="bedrock" hidden>
-        <h3 class="mcstatusTitle">Bedrock Edition</h3>
-        <dl class="plain dataList">
-            <dt>Status</dt>      <dd data-field="status"></dd>
-            <dt>Address</dt>     <dd data-field="address"></dd>
-            <dt>Port</dt>        <dd data-field="port"></dd>
-            <dt>Players</dt>     <dd data-field="players"></dd>
-            <dt>Version</dt>     <dd data-field="version"></dd>
-            <dt>Game mode</dt>   <dd data-field="gamemode"></dd>
-            <dt>Map</dt>         <dd data-field="map"></dd>
-            <dt>MOTD</dt>        <dd data-field="motd"></dd>
-        </dl>
-    </section>
+        <!-- Minecraft Bedrock Edition -->
+        <section class="mcstatusServer" data-server="bedrock" hidden>
+            <h3 class="mcstatusTitle" data-text="bedrock">Bedrock Edition</h3>
+            <dl class="plain dataList">
+                <dt data-text="status">Status</dt>          <dd data-field="status"></dd>
+                <dt data-text="address">Address</dt>        <dd data-field="address"></dd>
+                <dt data-text="port">Port</dt>              <dd data-field="port"></dd>
+                <dt data-text="players">Players</dt>        <dd data-field="players"></dd>
+                <dt data-text="version">Version</dt>        <dd data-field="version"></dd>
+                <dt data-text="gamemode">Game mode</dt>     <dd data-field="gamemode"></dd>
+                <dt data-text="map">Map</dt>                <dd data-field="map"></dd>
+                <dt data-text="motd">MOTD</dt>              <dd data-field="motd"></dd>
+            </dl>
+        </section>
+    </div>
 
     <!-- Time of the last query and link to the project (the <a> is optional) -->
     <div class="mcstatusFooter">
-        <p class="mcstatusUpdated" hidden>Last update: <span data-field="date"></span></p>
+        <p class="mcstatusUpdated" hidden><span data-text="lastUpdate">Last update</span>: <span data-field="date"></span></p>
         <a class="mcstatusSource" href="https://github.com/Tob1as/mcstatus-httpd" target="_blank" rel="noopener noreferrer"
            aria-label="github.com/Tob1as/mcstatus-httpd" data-name="github.com/Tob1as/mcstatus-httpd">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222 0 1.606-.014 2.898-.014 3.293 0 .322.216.694.825.576C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
@@ -95,6 +105,10 @@
     //   'de-DE' = fixed language, e.g. 'de-DE' -> 03.11.2026, 22:49 / 'en-US' -> 11/03/2026, 10:49 PM
     //   'iso'   = 2026-11-03 22:49
     const DATE_FORMAT = '';
+    // Language of the texts: '' = automatic, or fixed, e.g. 'de'.
+    // Automatic: language of the page (<html lang="...">, in WSC the language of the user),
+    // without it the language of the browser. A language missing in TEXTS shows English.
+    const LANGUAGE = '';
     // Show avatars instead of player names (Java), only works if mcstatus-httpd
     // provides them (AVATAR_ENABLE), otherwise the names are shown as text.
     const SHOW_AVATARS = true;
@@ -103,12 +117,24 @@
     const AVATAR_TYPE = '';
     // Height of a head avatar in pixels, body avatars (body, body3d) are 2.5 times as high.
     const AVATAR_SIZE = 20;
-    // Texts generated by the script, translate if needed.
-    const TEXT = {
-        online: 'Online',
-        offline: 'Offline',
-        error: 'Status currently not available.',
-        noServer: 'No server configured.',
+    // Texts per language (labels with data-text="..." in the HTML and texts of the script).
+    // To add a language, copy the 'en' block (e.g. as fr: { ... }) and translate the values,
+    // missing texts are taken from 'en'.
+    const TEXTS = {
+        en: {
+            loading: 'Loading ...', error: 'Status currently not available.', noServer: 'No server configured.',
+            online: 'Online', offline: 'Offline', lastUpdate: 'Last update',
+            java: 'Java Edition', bedrock: 'Bedrock Edition',
+            status: 'Status', address: 'Address', port: 'Port', players: 'Players', playerList: 'Player list',
+            version: 'Version', software: 'Software', plugins: 'Plugins', gamemode: 'Game mode', map: 'Map', motd: 'MOTD',
+        },
+        de: {
+            loading: 'Wird geladen ...', error: 'Status derzeit nicht abrufbar.', noServer: 'Kein Server konfiguriert.',
+            online: 'Online', offline: 'Offline', lastUpdate: 'Letzte Aktualisierung',
+            java: 'Java Edition', bedrock: 'Bedrock Edition',
+            status: 'Status', address: 'Adresse', port: 'Port', players: 'Spieler', playerList: 'Spielerliste',
+            version: 'Version', software: 'Software', plugins: 'Plugins', gamemode: 'Spielmodus', map: 'Welt', motd: 'MOTD',
+        },
     };
     // ------------------------------------------------------------------------
 
@@ -119,6 +145,17 @@
         console.error('mcstatus: <div class="mcstatusBox"> must be placed directly before the script.');
         return;
     }
+
+    // Language: LANGUAGE, otherwise the page language, without it the browser languages, fallback English.
+    // Only the main language counts, e.g. 'de-AT' -> 'de'.
+    const wanted = LANGUAGE || document.documentElement.lang;
+    const language = (wanted ? [wanted] : navigator.languages || [navigator.language])
+        .map((code) => String(code).toLowerCase().split('-')[0])
+        .find((code) => TEXTS[code]) || 'en';
+    const TEXT = { ...TEXTS.en, ...TEXTS[language] };
+    box.querySelectorAll('[data-text]').forEach((element) => {
+        element.textContent = TEXT[element.dataset.text] ?? element.textContent;
+    });
     const message = box.querySelector('.mcstatusMessage');
     const updated = box.querySelector('.mcstatusUpdated');
     // Avatars are loaded relative to MCSTATUS_URL, e.g. '/mcstatus' -> '/mcstatus/avatar/<name>'.

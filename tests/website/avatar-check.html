@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<!--
+    Avatar check: compares the avatar variants of all providers for one player (mcstatus-httpd).
+    Open directly in the browser or via the test environment: http://localhost:18092/avatar-check.html?u=Notch
+    * = URL used by mcstatus-httpd (see AVATAR_BUILTIN_PROVIDERS in mcstatus-httpd.py, there with the UUID).
+    The last row loads the avatars via mcstatus-httpd of the test environment (only works there).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Avatar check</title>
+<style>
+body { font-family: system-ui, "Segoe UI", Arial, sans-serif; font-size: 12px; background: #ddd; }
+form { margin-bottom: 10px; }
+table { border-collapse: collapse; }
+td, th { border: 1px solid #999; padding: 6px; text-align: center; vertical-align: bottom; background: #fff; }
+img { image-rendering: pixelated; display: block; margin: 0 auto 4px; }
+.used { font-weight: bold; }
+</style>
+</head>
+<body>
+<form>
+    Player name: <input name="u" maxlength="16" pattern="[A-Za-z0-9_]{1,16}">
+    <button>Show</button> (* = used by mcstatus-httpd)
+</form>
+<table id="t"></table>
+<script>
+const user = new URLSearchParams(location.search).get('u') || 'Notch';
+document.querySelector('input[name="u"]').value = user;
+const u = encodeURIComponent(user);
+const local = (type) => `/s/live/mcstatus/avatar/${u}?type=${type}`;
+// [label, URL, used by mcstatus-httpd]
+const rows = [
+  ['head (flat)', [
+    ['mc-heads /avatar', `https://mc-heads.net/avatar/${u}/96.png`, true],
+    ['mc-heads /avatar/nohelm', `https://mc-heads.net/avatar/${u}/96/nohelm.png`],
+    ['minotar /helm', `https://minotar.net/helm/${u}/96.png`, true],
+    ['minotar /avatar', `https://minotar.net/avatar/${u}/96.png`],
+    ['crafthead /helm', `https://crafthead.net/helm/${u}/96.png`, true],
+    ['crafthead /avatar', `https://crafthead.net/avatar/${u}/96.png`],
+  ]],
+  ['3D head', [
+    ['mc-heads /head', `https://mc-heads.net/head/${u}/96.png`],
+    ['mc-heads /head/left', `https://mc-heads.net/head/${u}/96/left.png`],
+    ['mc-heads /head/right', `https://mc-heads.net/head/${u}/96/right.png`],
+    ['mc-heads /head/nohelm', `https://mc-heads.net/head/${u}/96/nohelm.png`, true],
+    ['minotar /cube', `https://minotar.net/cube/${u}/96.png`, true],
+    ['crafthead /cube', `https://crafthead.net/cube/${u}/96.png`, true],
+  ]],
+  ['body (flat)', [
+    ['mc-heads /player', `https://mc-heads.net/player/${u}/64.png`, true],
+    ['minotar /armor/body', `https://minotar.net/armor/body/${u}/64.png`, true],
+    ['minotar /body', `https://minotar.net/body/${u}/64.png`],
+    ['crafthead /armor/body', `https://crafthead.net/armor/body/${u}/64.png`, true],
+    ['crafthead /body', `https://crafthead.net/body/${u}/64.png`],
+  ]],
+  ['3D body', [
+    ['mc-heads /body', `https://mc-heads.net/body/${u}/96.png`, true],
+    ['mc-heads /body/left', `https://mc-heads.net/body/${u}/96/left.png`],
+  ]],
+  ['via mcstatus-httpd (test environment)', [
+    ['head', local('head')],
+    ['body', local('body')],
+    ['head3d', local('head3d')],
+    ['body3d', local('body3d')],
+  ]],
+];
+const t = document.getElementById('t');
+for (const [title, cells] of rows) {
+  const tr = t.insertRow();
+  const th = document.createElement('th');
+  th.textContent = title;
+  tr.append(th);
+  for (const [label, url, used] of cells) {
+    const td = tr.insertCell();
+    const name = used ? `* ${label}` : label;
+    const cap = document.createElement('div');
+    cap.textContent = name;
+    cap.className = used ? 'used' : '';
+    const img = new Image();
+    img.onload = () => { cap.textContent = `${name} (${img.naturalWidth}x${img.naturalHeight})`; };
+    img.onerror = () => { cap.textContent = `${name} (ERROR)`; };
+    img.src = url;
+    td.append(img, cap);
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{"date": "2026-11-06T12:00:00+00:00",
+ "java": {"hostname": "a-very-long-subdomain.minecraft-server-of-the-community.example.com", "port": 25565, "online": true,
+  "software": {"version": "Paper 1.21.4-232 (MC: 1.21.4)", "brand": "Paper on 1.21.4-232-ver/1.21.4@abcdef0", "plugins": ["LuckPerms 5.4.141", "EssentialsX 2.20.1", "EssentialsXChat 2.20.1", "WorldEdit 7.3.9", "WorldGuard 7.0.12", "Vault 1.7.3", "Geyser-Spigot 2.6.0", "floodgate 2.2.3", "dynmap 3.7", "CoreProtect 22.4"]},
+  "players": {"online": 6, "max": 2000, "list": ["Pearlescentmoon", "BdoubleO100", "MumboJumbo", ".BedrockSteve", "Anonymous Player", "Notch"]},
+  "map": "world_with_a_long_name_for_testing",
+  "motd": "Welcome to our very long message of the day\nwith a second line that is also quite long"},
+ "bedrock": {"hostname": "a-very-long-subdomain.minecraft-bedrock-server-of-the-community.example.com", "port": 19132, "online": true,
+  "software": {"version": "1.21.50", "brand": "MCPE", "protocol": 766},
+  "players": {"online": 1999, "max": 2000}, "map": "Bedrock level with a long name", "motd": "Bedrock MOTD that is quite long as well", "gamemode": "Adventure"}}

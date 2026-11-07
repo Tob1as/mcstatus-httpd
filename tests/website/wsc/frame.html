@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<!--
+    Test page in the look of a WSC forum (tests/website), filled by nginx (SSI):
+    /wsc/<position>/<scenario>/<page>  page = wsc-box.html or wsc-box-mini.html, position =
+      sidebar  box in the sidebar on the right
+      footer   box in the footer boxes
+      page     own page (WSC CMS page with the box code as content), full width without sidebar
+    The example file is included unchanged (with MCSTATUS_URL of the scenario, see nginx.conf).
+    ?light / ?dark = color scheme (default: setting of the device, like WSC "automatic"),
+    ?lang=de / ?lang=en = language of the forum user (<html lang>, default: language of the browser).
+-->
+<html lang="en" data-color-scheme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>WSC test page - mcstatus-httpd</title>
+    <link rel="stylesheet" href="/wsc/wsc.css">
+    <script>
+    (() => {
+        const query = new URLSearchParams(location.search);
+        // Language of the user: WSC writes it into <html lang>, the boxes read it from there.
+        document.documentElement.lang = query.get('lang') || (navigator.language || 'en').split('-')[0];
+        // Color scheme like WSC: fixed or the setting of the device (also when it changes).
+        const media = matchMedia('(prefers-color-scheme: dark)');
+        const apply = () => {
+            const dark = query.has('dark') || (!query.has('light') && media.matches);
+            document.documentElement.dataset.colorScheme = dark ? 'dark' : 'light';
+        };
+        apply();
+        media.addEventListener('change', apply);
+    })();
+    </script>
+</head>
+<body>
+<div class="pageHeaderContainer">
+    <nav class="pageHeaderMenu"><div class="layoutBoundary"><a href="/">Overview</a><a href="#">Forum</a><a href="#">Members</a></div></nav>
+    <div class="layoutBoundary"><div class="pageHeaderLogo">WSC test page <p class="testSwitches" id="testSwitches"></p></div></div>
+</div>
+
+<section class="main">
+    <div class="layoutBoundary">
+        <div class="content">
+<!--# if expr="$position = page" -->
+            <header class="contentHeader"><div class="contentHeaderTitle"><h1 class="contentTitle">Minecraft Server</h1></div></header>
+<!--# include virtual="/s/${scenario}/${page}" -->
+<!--# else -->
+            <header class="contentHeader"><div class="contentHeaderTitle"><h1 class="contentTitle">Lorem ipsum dolor sit amet</h1></div></header>
+            <p class="testInfo"><!--# echo var="page" --> (scenario <!--# echo var="scenario" -->) in the <!--# echo var="position" -->,
+               approximation of the WSC default style (<code>tests/website/wsc/wsc.css</code>). The text is only a placeholder.</p>
+            <div class="htmlContent">
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore
+                   magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+                   consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+                <p>Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                   Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros
+                   bibendum elit, nec luctus magna felis sollicitudin mauris. Integer in mauris eu nibh euismod gravida.</p>
+                <h2 class="sectionTitle">Praesent dapibus</h2>
+                <p>Praesent dapibus, neque id cursus faucibus, tortor neque egestas augue, eu vulputate magna eros eu erat. Aliquam
+                   erat volutpat. Nam dui mi, tincidunt quis, accumsan porttitor, facilisis luctus, metus. Phasellus ultrices nulla
+                   quis nibh. Quisque a lectus. Donec consectetuer ligula vulputate sem tristique cursus.</p>
+                <ul>
+                    <li>Nam nulla quam, gravida non, commodo a, sodales sit amet, nisi.</li>
+                    <li>Pellentesque fermentum dolor. Aliquam quam lectus, facilisis auctor, ultrices ut, elementum vulputate, nunc.</li>
+                    <li>Sed adipiscing ornare risus. Morbi est est, blandit sit amet, sagittis vel, euismod vel, velit.</li>
+                </ul>
+                <p>Pellentesque egestas sem. Suspendisse commodo ullamcorper magna. Ut aliquam sollicitudin leo. Cras iaculis
+                   ultricies nulla. Donec quis dui at dolor tempor interdum. Vivamus molestie gravida turpis. Fusce lobortis lorem at
+                   ipsum semper sagittis. Nam convallis pellentesque nisl. Integer malesuada commodo nulla.</p>
+            </div>
+<!--# endif -->
+        </div>
+<!--# if expr="$position = sidebar" -->
+        <aside class="sidebar boxesSidebarRight">
+            <div class="boxContainer">
+                <section class="box boxWithImage">
+                    <div class="boxImage"><a href="https://github.com/Tob1as/mcstatus-httpd"><img src="/icons/minecraft-block-icon-256.png" alt=""></a></div>
+                    <h2 class="boxTitle"><a href="https://github.com/Tob1as/mcstatus-httpd">Minecraft Server</a></h2>
+                    <div class="boxContent">
+<!--# include virtual="/s/${scenario}/${page}" -->
+                    </div>
+                </section>
+                <section class="box">
+                    <h2 class="boxTitle">Statistics</h2>
+                    <div class="boxContent">
+                        <dl class="plain dataList">
+                            <dt>Threads</dt><dd>1,234</dd>
+                            <dt>Posts</dt><dd>12,345</dd>
+                            <dt>Members</dt><dd>567</dd>
+                        </dl>
+                    </div>
+                </section>
+            </div>
+        </aside>
+<!--# endif -->
+    </div>
+</section>
+
+<!--# if expr="$position = footer" -->
+<div class="boxesFooterBoxes">
+    <div class="layoutBoundary">
+        <div class="boxContainer">
+            <section class="box">
+                <h2 class="boxTitle"><a href="https://github.com/Tob1as/mcstatus-httpd">Minecraft Server</a></h2>
+                <div class="boxContent">
+<!--# include virtual="/s/${scenario}/${page}" -->
+                </div>
+            </section>
+            <section class="box">
+                <h2 class="boxTitle">Statistics</h2>
+                <div class="boxContent">
+                    <dl class="plain dataList">
+                        <dt>Threads</dt><dd>1,234</dd>
+                        <dt>Posts</dt><dd>12,345</dd>
+                        <dt>Members</dt><dd>567</dd>
+                    </dl>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+<!--# endif -->
+
+<footer class="pageFooter"><div class="layoutBoundary">mcstatus-httpd test environment, not affiliated with WoltLab</div></footer>
+
+<script>
+// Links to switch position, color scheme and language of this page.
+(() => {
+    const [, , position, scenario, page] = location.pathname.split('/');
+    const query = new URLSearchParams(location.search);
+    const link = (text, active, path, params) => {
+        const a = document.createElement('a');
+        const search = new URLSearchParams(params).toString();
+        a.href = path + (search ? '?' + search : '');
+        a.textContent = text;
+        a.className = active ? 'active' : '';
+        return a;
+    };
+    const scheme = query.has('dark') ? 'dark' : query.has('light') ? 'light' : '';
+    const lang = query.get('lang') || '';
+    const keep = (changes) => ({ ...(scheme ? { [scheme]: '' } : {}), ...(lang ? { lang } : {}), ...changes });
+    const groups = [
+        ['sidebar', 'footer', 'page'].map((p) => link(p, p === position, `/wsc/${p}/${scenario}/${page}`, keep({}))),
+        [['auto', ''], ['light', 'light'], ['dark', 'dark']].map(([text, value]) => {
+            const params = lang ? { lang } : {};
+            if (value) params[value] = '';
+            return link(text, value === scheme, location.pathname, params);
+        }),
+        [['browser', ''], ['en', 'en'], ['de', 'de']].map(([text, value]) => {
+            const params = scheme ? { [scheme]: '' } : {};
+            if (value) params.lang = value;
+            return link(text, value === lang, location.pathname, params);
+        }),
+    ];
+    const target = document.getElementById('testSwitches');
+    for (const group of groups) {
+        const span = document.createElement('span');
+        group.forEach((a, i) => span.append(...(i ? [' | ', a] : [a])));
+        target.append(span);
+    }
+})();
+</script>
+</body>
+</html>

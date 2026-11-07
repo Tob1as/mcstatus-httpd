@@ -1,0 +1,8 @@
+{"date": "2026-11-06T12:00:00+00:00",
+ "java": {"hostname": "minecraft.example.com", "port": 25565, "online": true,
+  "software": {"version": "1.21.4", "brand": "Paper on 1.21.4", "plugins": ["LuckPerms 5.4.141", "EssentialsX 2.20.1"]},
+  "players": {"online": 3, "max": 20, "list": ["Notch", "jeb_", "Dinnerbone"]},
+  "map": "world", "motd": "A Minecraft Server"},
+ "bedrock": {"hostname": "minecraft.example.com", "port": 19132, "online": true,
+  "software": {"version": "1.21.50", "brand": "MCPE", "protocol": 766},
+  "players": {"online": 2, "max": 10}, "map": "Bedrock level", "motd": "Minecraft Bedrock Server", "gamemode": "Survival"}}

@@ -11,7 +11,7 @@ are queried directly via HTTP (GET /v1/join), because mcstatus (as of version
 https://github.com/py-mine/mcstatus/issues/1220
 
 Requirements:
-    Python >= 3.13, mcstatus >= 14.2.0
+    Python >= 3.12, mcstatus >= 14.2.0
 
 Configuration:
     Every setting can be provided as an environment variable or as a command
@@ -79,8 +79,8 @@ Container health check:
 import sys
 
 # Fail early with a readable message instead of an ImportError further down.
-if sys.version_info < (3, 13):
-    sys.exit("mcstatus-httpd requires Python 3.13 or newer.")
+if sys.version_info < (3, 12):
+    sys.exit("mcstatus-httpd requires Python 3.12 or newer.")
 
 import argparse
 import contextlib
@@ -109,7 +109,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.metadata import version as package_version
 from pathlib import Path
-from typing import Any, Final, cast, override
+from typing import Any, Final, TypeAlias, cast, override
 from urllib.parse import parse_qs, quote, unquote, urlsplit
 
 from mcstatus import BedrockServer, JavaServer
@@ -166,8 +166,10 @@ FALSE_VALUES: Final = frozenset({"0", "false", "no", "off"})
 SOURCE_CODE_URL: Final = "https://github.com/Tob1as/mcstatus-httpd"
 SHOW_INFO: Final = os.environ.get("MCSTATUS_HTTPD_INFO", "").strip().lower() in TRUE_VALUES
 
-type IPAddress = ipaddress.IPv4Address | ipaddress.IPv6Address
-type IPNetwork = ipaddress.IPv4Network | ipaddress.IPv6Network
+# TypeAlias instead of the "type" statement (3.12+): older versions must parse the file to show the
+# readable message of the version check at the top instead of a SyntaxError.
+IPAddress: TypeAlias = ipaddress.IPv4Address | ipaddress.IPv6Address
+IPNetwork: TypeAlias = ipaddress.IPv4Network | ipaddress.IPv6Network
 
 # Bedrock transports: "nethernet" (default since BDS 1.26.50, TCP + HTTP),
 # "raknet" (legacy, UDP), "auto" = query both at the same time.
@@ -1464,7 +1466,7 @@ def _download_avatar(url: str, context: ssl.SSLContext | None = None) -> bytes:
 
 
 # (player name in lower case, avatar type, image size). Mojang player names are case-insensitive.
-type AvatarKey = tuple[str, str, int]
+AvatarKey: TypeAlias = tuple[str, str, int]
 
 
 class MemoryAvatarCache:

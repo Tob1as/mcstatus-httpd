@@ -1,0 +1,3 @@
+{"date": "2026-11-06T12:00:00+00:00",
+ "java": {"hostname": "minecraft.example.com", "port": 25565, "online": false, "error": "Server unreachable"},
+ "bedrock": {"hostname": "minecraft.example.com", "port": 19132, "online": false, "error": "Server unreachable"}}

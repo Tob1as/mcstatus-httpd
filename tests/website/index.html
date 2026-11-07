@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>mcstatus-httpd test environment</title>
+    <style>
+    body { margin: 30px; font-family: system-ui, "Segoe UI", Arial, sans-serif; font-size: 14px; }
+    table { border-collapse: collapse; }
+    th, td { padding: 6px 12px; border-bottom: 1px solid #ddd; text-align: left; vertical-align: top; }
+    </style>
+</head>
+<body>
+<h1>mcstatus-httpd test environment</h1>
+<p>Website examples (<code>examples/</code>) with live or mock data, refresh every 10 seconds.
+   Mock files: <code>tests/website/scenarios/</code>. See <code>tests/website/README.md</code>.<br>
+   The WSC boxes are shown on a page in the look of a WSC forum (default style, light/dark by device setting):
+   in the sidebar, in the footer or as own page.</p>
+<table>
+    <tr><th>Scenario</th><th>Description</th><th>Pages</th></tr>
+    <tr><td>live</td><td>real mcstatus-httpd with the demo servers of mcstatus.io</td><td data-s="live"></td></tr>
+    <tr><td>random</td><td>new random values on every request (players, list, offline, status fallback, Geyser name)</td><td data-s="random"></td></tr>
+    <tr><td>online</td><td>both online, 3 Java players</td><td data-s="online"></td></tr>
+    <tr><td>full</td><td>20/20 Java players (avatar wrapping), 10/10 Bedrock</td><td data-s="full"></td></tr>
+    <tr><td>sample</td><td>Java status fallback: 47 online, only 12 names, brand/map null</td><td data-s="sample"></td></tr>
+    <tr><td>empty</td><td>both online, nobody playing</td><td data-s="empty"></td></tr>
+    <tr><td>offline</td><td>both offline</td><td data-s="offline"></td></tr>
+    <tr><td>mixed</td><td>Java online, Bedrock offline</td><td data-s="mixed"></td></tr>
+    <tr><td>java-only</td><td>only Java configured (mini box: address instead of name)</td><td data-s="java-only"></td></tr>
+    <tr><td>bedrock-only</td><td>only Bedrock configured</td><td data-s="bedrock-only"></td></tr>
+    <tr><td>long</td><td>long hostnames, MOTD, plugins, names (".BedrockSteve", "Anonymous Player" -> text)</td><td data-s="long"></td></tr>
+    <tr><td>error</td><td>HTTP 500 (error message)</td><td data-s="error"></td></tr>
+</table>
+<p><a href="/avatar-check.html">Avatar check</a>: all avatar variants of the providers for one player.</p>
+<script>
+document.querySelectorAll('[data-s]').forEach((cell) => {
+    const s = cell.dataset.s;
+    const wsc = (page) => `${page}: ` + ['sidebar', 'footer', 'page']
+        .map((position) => `<a href="/wsc/${position}/${s}/${page}">${position}</a>`).join(' ');
+    cell.innerHTML = [`<a href="/s/${s}/index.html">index.html</a>`, wsc('wsc-box.html'), wsc('wsc-box-mini.html'),
+        `<a href="/s/${s}/mcstatus">JSON</a>`].join(' | ');
+});
+</script>
+</body>
+</html>

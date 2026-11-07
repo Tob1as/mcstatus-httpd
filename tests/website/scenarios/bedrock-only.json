@@ -1,0 +1,4 @@
+{"date": "2026-11-06T12:00:00+00:00",
+ "bedrock": {"hostname": "minecraft.example.com", "port": 19132, "online": true,
+  "software": {"version": "1.21.50", "brand": "MCPE", "protocol": 766},
+  "players": {"online": 3, "max": 10}, "map": "Bedrock level", "motd": "Only Bedrock configured", "gamemode": "Survival"}}
