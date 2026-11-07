@@ -59,7 +59,7 @@ Shows `wsc-box.html` or `wsc-box-mini.html` on a page in the look of a WSC forum
 
 * `sidebar`: in the sidebar (box with image: the Minecraft block of `examples/icons`), below it a statistics box for comparison
 * `footer`: in the footer boxes, next to a statistics box
-* `page`: as own page (WSC CMS page with the box code as content), full width without sidebar
+* `page`: as own page (WSC CMS page with the box code as content), sidebar with the statistics box
 
 With `sidebar` and `footer` the content area shows placeholder text (Lorem ipsum), so the page looks like a normal forum page.
 

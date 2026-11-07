@@ -4,7 +4,7 @@
     /wsc/<position>/<scenario>/<page>  page = wsc-box.html or wsc-box-mini.html, position =
       sidebar  box in the sidebar on the right
       footer   box in the footer boxes
-      page     own page (WSC CMS page with the box code as content), full width without sidebar
+      page     own page (WSC CMS page with the box code as content), sidebar with the statistics box
     The example file is included unchanged (with MCSTATUS_URL of the scenario, see nginx.conf).
     ?light / ?dark = color scheme (default: setting of the device, like WSC "automatic"),
     ?lang=de / ?lang=en = language of the forum user (<html lang>, default: language of the browser).
@@ -69,9 +69,12 @@
             </div>
 <!--# endif -->
         </div>
-<!--# if expr="$position = sidebar" -->
+<!-- Sidebar for "sidebar" and "page" (nginx SSI has no nested if, so three blocks one after another) -->
+<!--# if expr="$position != footer" -->
         <aside class="sidebar boxesSidebarRight">
             <div class="boxContainer">
+<!--# endif -->
+<!--# if expr="$position = sidebar" -->
                 <section class="box boxWithImage">
                     <div class="boxImage"><a href="https://github.com/Tob1as/mcstatus-httpd"><img src="/icons/minecraft-block-icon-256.png" alt=""></a></div>
                     <h2 class="boxTitle"><a href="https://github.com/Tob1as/mcstatus-httpd">Minecraft Server</a></h2>
@@ -79,6 +82,8 @@
 <!--# include virtual="/s/${scenario}/${page}" -->
                     </div>
                 </section>
+<!--# endif -->
+<!--# if expr="$position != footer" -->
                 <section class="box">
                     <h2 class="boxTitle">Statistics</h2>
                     <div class="boxContent">
