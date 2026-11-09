@@ -34,7 +34,7 @@ All icons are drawn by this script (no third-party graphics):
 * `minecraft-block-icon.svg`: isometric pixel-art grass block. Each face is an 8x8 pattern of letters (`L`/`M`/`D` = light/main/dark grass, `l`/`m`/`d` = dirt), mapped onto the face with an SVG `matrix` transform. The side faces are darkened (shading).
 * `minecraft-block-icon-<size>.png` (with `--png`): the block as PNG in 16, 32, 64, 128, 256 and 512 px with transparent background (rendered by the browser), e.g. as box icon or favicon.
 * `minecraft-block-icon-<size>.webp` (with `--webp`, not in the repository): the same as lossless WebP (converted from the rendered PNG, color profile removed), mostly smaller than the PNG (except 512 px).
-* `status-dot.svg` (green), `status-dot-mixed.svg` (half green / half red, used in the README) and `plus.svg`.
+* `status-dot-green.svg`, `status-dot-red.svg`, `status-dot-mixed.svg` (half green / half red, used in the README), each also as `-plain.svg` without the light ring, and `plus.svg`.
 
 Colors and patterns are defined at the top of the script (`colors`, `top`, `side`).
 

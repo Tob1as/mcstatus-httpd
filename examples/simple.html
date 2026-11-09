@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Minecraft Server Status</title>
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <link rel="shortcut icon" sizes="16x16" href="data:image/x-icon;base64,UklGRkIEAABXRUJQVlA4WAoAAAAwAAAAHwAAHwAASUNDUAwCAAAAAAIMbGNtcwIQAABtbnRyUkdCIFhZWiAH3AABABkAAwApADlhY3NwQVBQTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9tYAAQAAAADTLWxjbXMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAApkZXNjAAAA/AAAAF5jcHJ0AAABXAAAAAt3dHB0AAABaAAAABRia3B0AAABfAAAABRyWFlaAAABkAAAABRnWFlaAAABpAAAABRiWFlaAAABuAAAABRyVFJDAAABzAAAAEBnVFJDAAABzAAAAEBiVFJDAAABzAAAAEBkZXNjAAAAAAAAAANjMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB0ZXh0AAAAAEZCAABYWVogAAAAAAAA9tYAAQAAAADTLVhZWiAAAAAAAAADFgAAAzMAAAKkWFlaIAAAAAAAAG+iAAA49QAAA5BYWVogAAAAAAAAYpkAALeFAAAY2lhZWiAAAAAAAAAkoAAAD4QAALbPY3VydgAAAAAAAAAaAAAAywHJA2MFkghrC/YQPxVRGzQh8SmQMhg7kkYFUXdd7WtwegWJsZp8rGm/fdPD6TD//0FMUEjZAAAAAYCDbdux5cm2bZuba3Jt1uZGG5tt1+Q227Zt2/5+/++3NUbEBADtbH5zLQaAnsG09gHDNsJFUcmlHmHkv8MeHCh4A+b+MKqvjWaM9DDbtX9gNJ9nKtOmW3KH0b0cJkhNImYXQ/nd48pKxuw58YshfqzXAwDJTQzHdACQ3sMjB7fsfzEZXHIAQHITjzQAYHbs+0F1n6cB5KIhG0i+2mxZgapGxjV9s/78QCuTZcMHbScJ8kAvt9vYH7XnchMGQCgVsUfhp8uBHRDrF9xh2HKwMKBndR2s0AI6AQBWUDggLgEAALAHAJ0BKiAAIAA+nUifSyWkIqGoCACwE4lsAJ0yhHmFoDbZ8+3ZHy/YG0oKDqTRD9j+zjPjXMzi/erDlb4D2JN0qJ/eYAAA/vN06k2xoManR3VlxSw2xlQaia/bpBgBJl6/EV6fCUHEppnHrvpYdw9oD59YL+sE6jhyrr9orCyVvka0DjXj6OBYGwQ8jOLNEmP8scsJJ+PvKSJA72pVWsqFh+O8B4FU8ciK1VdMw4aOzkbc6XPt87v3yVRD393tEzTH2enHOv51GYADtr4ZscdsJ+ognrnCNwllIBIl5mVBqBa0b/lwgnIiWgdUIMKUsQQIp4rjZx8955E2wJwmEQdimIeTcN55garsk1plZW2DMuCkBnhLQriCYZ1TchiPSCtxu47SAS4LasxTMNAA" />
+</head>
+<body>
+<!--
+    Minimal example for mcstatus-httpd (https://github.com/Tob1as/mcstatus-httpd):
+    shows the status of the servers as plain text, no design.
+    Player names are shown when the server sends them (Query or player sample of the status).
+-->
+<pre id="mcstatus">Loading ...</pre>
+
+<script>
+// Address of mcstatus-httpd
+const MCSTATUS_URL = 'http://example.com:8080/';
+const REFRESH_SECONDS = 60;
+
+async function showStatus() {
+    const output = document.getElementById('mcstatus');
+    try {
+        const response = await fetch(MCSTATUS_URL);
+        const data = await response.json();
+        let text = '';
+        for (const [name, server] of [['Java', data.java], ['Bedrock', data.bedrock]]) {
+            if (!server) continue;  // this server is not configured in mcstatus-httpd
+            text += `${name}: ${server.hostname}:${server.port}\n`;
+            if (server.online) {
+                text += 'Status: Online\n';
+                text += `Players: ${server.players.online} / ${server.players.max}\n`;
+                if (server.players.list?.length) {
+                    text += `Names: ${server.players.list.join(', ')}\n`;
+                }
+            } else {
+                text += 'Status: Offline\n';
+            }
+            text += '\n';
+        }
+        // textContent (not innerHTML): names from the server are shown as text, never as HTML.
+        output.textContent = text;
+    } catch (error) {
+        output.textContent = 'Status not available.';
+    }
+}
+
+showStatus();
+setInterval(showStatus, REFRESH_SECONDS * 1000);
+</script>
+</body>
+</html>

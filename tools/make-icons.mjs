@@ -1,8 +1,10 @@
 // Generates the icons of examples/icons/ (own drawing, no third-party graphics).
 // Usage: node tools/make-icons.mjs [--png] [--webp] [--preview <file.png>]
 //   minecraft-block-icon.svg          isometric pixel-art grass block (8x8 pixels per face)
-//   status-dot.svg                    green status dot (online)
+//   status-dot-green.svg              green status dot (online)
+//   status-dot-red.svg                red status dot (offline)
 //   status-dot-mixed.svg              half green / half red status dot (online/offline), used in the README
+//   status-dot*-plain.svg             the same status dots without the light ring (same outer size)
 //   plus.svg                          "+" between the icons in the README
 //   --png                             additionally minecraft-block-icon-<size>.png (16-512 px, transparent)
 //   --webp                            additionally minecraft-block-icon-<size>.webp: lossless WebP
@@ -61,14 +63,19 @@ write('minecraft-block-icon.svg', '<svg xmlns="http://www.w3.org/2000/svg" viewB
 // ---- Status icons (same colors as the status dot of the website examples) ------
 const green = '#16a34a';
 const red = '#dc2626';
-const dot = (color) => `<circle cx="32" cy="32" r="18" fill="${color}" fill-opacity=".2"/><circle cx="32" cy="32" r="11" fill="${color}"/>`;
-const status = {
-  'status-dot.svg': ['Status: Online', dot(green)],
+// Default with a light ring around the dot; "plain" without the ring, the dot as large as the ring.
+const dot = (color, plain) => (plain
+  ? `<circle cx="32" cy="32" r="18" fill="${color}"/>`
+  : `<circle cx="32" cy="32" r="18" fill="${color}" fill-opacity=".2"/><circle cx="32" cy="32" r="11" fill="${color}"/>`);
+const status = {};
+for (const [suffix, plain] of [['', false], ['-plain', true]]) {
+  status[`status-dot-green${suffix}.svg`] = ['Status: Online', dot(green, plain)];
+  status[`status-dot-red${suffix}.svg`] = ['Status: Offline', dot(red, plain)];
   // Half green (upper right), half red (lower left), dividing line from top left to bottom right.
-  'status-dot-mixed.svg': ['Status: Online/Offline', '<defs><clipPath id="g"><polygon points="0,0 64,0 64,64"/></clipPath>'
+  status[`status-dot-mixed${suffix}.svg`] = ['Status: Online/Offline', '<defs><clipPath id="g"><polygon points="0,0 64,0 64,64"/></clipPath>'
     + '<clipPath id="r"><polygon points="0,0 0,64 64,64"/></clipPath></defs>'
-    + `<g clip-path="url(#g)">${dot(green)}</g><g clip-path="url(#r)">${dot(red)}</g>`],
-};
+    + `<g clip-path="url(#g)">${dot(green, plain)}</g><g clip-path="url(#r)">${dot(red, plain)}</g>`];
+}
 for (const [name, [title, content]] of Object.entries(status)) {
   write(name, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><title>${title}</title>${content}</svg>\n`);
 }

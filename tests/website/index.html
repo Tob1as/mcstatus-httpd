@@ -36,8 +36,8 @@ document.querySelectorAll('[data-s]').forEach((cell) => {
     const s = cell.dataset.s;
     const wsc = (page) => `${page}: ` + ['sidebar', 'footer', 'page']
         .map((position) => `<a href="/wsc/${position}/${s}/${page}">${position}</a>`).join(' ');
-    cell.innerHTML = [`<a href="/s/${s}/index.html">index.html</a>`, wsc('wsc-box.html'), wsc('wsc-box-mini.html'),
-        `<a href="/s/${s}/mcstatus">JSON</a>`].join(' | ');
+    cell.innerHTML = [`<a href="/s/${s}/index.html">index.html</a>`, `<a href="/s/${s}/simple.html">simple.html</a>`,
+        wsc('wsc-box.html'), wsc('wsc-box-mini.html'), `<a href="/s/${s}/mcstatus">JSON</a>`].join(' | ');
 });
 </script>
 </body>
