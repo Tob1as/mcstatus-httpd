@@ -37,7 +37,7 @@ Examples for docker-compose (minecraft.yml, minecraft-bedrock.yml) you can find 
 ### Requirements
 
 * Python >= 3.12
-* [mcstatus](https://github.com/py-mine/mcstatus) >= 14.2.0
+* [mcstatus](https://github.com/py-mine/mcstatus) >= 15.0.0
 * Minecraft Java: [Query](https://minecraft.wiki/w/Query) should be enabled (`enable-query=true` in `server.properties`).  
   Without Query the status ping is used as fallback, which only provides a player *sample* (max. ~12 names) and no plugins and map name.
 * Minecraft Bedrock with NetherNet: the server port must be reachable via **TCP** (status via `GET /v1/join`).  
@@ -93,7 +93,7 @@ At least one server (Java or Bedrock) must be configured.
 With HTTPS enabled, `HTTP_PORT` only serves HTTPS (no plain HTTP), e.g. use `HTTP_PORT=8443`.  
 If HTTPS is enabled but the certificate files are missing, the service does not start.
 
-Bedrock client: mcstatus supports NetherNet only in versions newer than 14.2.0 ([py-mine/mcstatus#1226](https://github.com/py-mine/mcstatus/pull/1226)). Until then, and with `MINECRAFT_BEDROCK_CLIENT=builtin`, mcstatus-httpd queries NetherNet with its own code (RakNet always via mcstatus). The log shows the client in use at startup. Use `builtin` if a Bedrock server is shown offline with `mcstatus` but works with `builtin` (e.g. an unknown game mode is rejected by mcstatus).
+Bedrock client: by default mcstatus queries NetherNet and RakNet. With `MINECRAFT_BEDROCK_CLIENT=builtin` mcstatus-httpd queries NetherNet with its own code (RakNet always via mcstatus). Use `builtin` if a Bedrock server is shown offline with `mcstatus` but works with `builtin` (e.g. an unknown game mode is rejected by mcstatus).
 
 IPv4 + IPv6 behind a reverse proxy (e.g. Docker network with `--ipv6`):
 

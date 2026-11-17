@@ -6,12 +6,11 @@ https://github.com/Tob1as/mcstatus-httpd
 Queries a Minecraft Java Edition and/or Bedrock Edition server with mcstatus
 (https://github.com/py-mine/mcstatus) and serves the result as JSON.
 Bedrock servers using the NetherNet transport (default since Bedrock 1.26.50)
-are queried by mcstatus if it supports NetherNet (newer than 14.2.0, see
-https://github.com/py-mine/mcstatus/pull/1226), otherwise and with
-MINECRAFT_BEDROCK_CLIENT=builtin by own code via HTTP (GET /v1/join).
+are queried by mcstatus, with MINECRAFT_BEDROCK_CLIENT=builtin by own code
+via HTTP (GET /v1/join).
 
 Requirements:
-    Python >= 3.12, mcstatus >= 14.2.0
+    Python >= 3.12, mcstatus >= 15.0.0
 
 Configuration:
     Every setting can be provided as an environment variable or as a command
@@ -113,7 +112,6 @@ from pathlib import Path
 from typing import Any, Final, TypeAlias, cast, override
 from urllib.parse import parse_qs, quote, unquote, urlsplit
 
-import mcstatus
 from mcstatus import BedrockServer, JavaServer
 from mcstatus.motd import Motd
 from mcstatus.responses import BedrockStatusResponse
@@ -177,12 +175,9 @@ IPNetwork: TypeAlias = ipaddress.IPv4Network | ipaddress.IPv6Network
 # Bedrock transports: "nethernet" (default since BDS 1.26.50, TCP + HTTP),
 # "raknet" (legacy, UDP), "auto" = query both at the same time.
 BEDROCK_TRANSPORTS: Final = ("auto", "nethernet", "raknet")
-# Who queries Bedrock: "mcstatus" (NetherNet + RakNet by mcstatus, needs a version with
-# NetherNet support) or "builtin" (own NetherNet code, RakNet by mcstatus).
+# Who queries Bedrock: "mcstatus" (NetherNet + RakNet by mcstatus) or "builtin"
+# (own NetherNet code, RakNet by mcstatus).
 BEDROCK_CLIENTS: Final = ("mcstatus", "builtin")
-# mcstatus with NetherNet support (newer than 14.2.0) exports BedrockTransport and
-# BedrockServer accepts "transport". Older versions always use the builtin client.
-MCSTATUS_NETHERNET: Final = hasattr(mcstatus, "BedrockTransport")
 # NetherNet "gameType" values of GET /v1/join.
 NETHERNET_GAME_TYPES: Final = {0: "Survival", 1: "Creative", 2: "Adventure"}
 # Upper limit for the NetherNet status response (normally ~200 bytes).
@@ -288,12 +283,7 @@ class BedrockTarget:
     port: int  # game port (NetherNet: TCP, RakNet: UDP)
     display_hostname: str  # hostname shown in the JSON output
     transport: str  # one of BEDROCK_TRANSPORTS
-    client: str  # one of BEDROCK_CLIENTS (as configured, see uses_mcstatus)
-
-    @property
-    def uses_mcstatus(self) -> bool:
-        """True if mcstatus queries NetherNet and RakNet (configured and supported)."""
-        return self.client == "mcstatus" and MCSTATUS_NETHERNET
+    client: str  # one of BEDROCK_CLIENTS
 
 
 @dataclass(frozen=True, slots=True)
@@ -671,8 +661,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
                 "or 'auto' = try both at the same time (default: auto).")
     option(bedrock, "--bedrock-client", env="MINECRAFT_BEDROCK_CLIENT", default="mcstatus",
            type=_bedrock_client, metavar="CLIENT",
-           text="Who queries Bedrock: 'mcstatus' (needs mcstatus with NetherNet support, otherwise "
-                "'builtin' is used) or 'builtin' = own NetherNet code, RakNet by mcstatus (default: mcstatus).")
+           text="Who queries Bedrock: 'mcstatus' or 'builtin' = own NetherNet code, RakNet by mcstatus "
+                "(default: mcstatus).")
 
     query = parser.add_argument_group("Query behaviour")
     option(query, "--timeout", env="MINECRAFT_TIMEOUT", default="3", type=_timeout, metavar="SECONDS",
@@ -1004,12 +994,12 @@ def query_bedrock(target: BedrockTarget, timeout: float) -> dict[str, Any]:
 
     With transport "auto" both protocols are queried at the same time and the
     first successful answer is used, so neither protocol has to wait for the
-    timeout of the other one. Done by mcstatus (client "mcstatus", if supported)
-    or by the builtin client below.
+    timeout of the other one. Done by mcstatus (client "mcstatus") or by the
+    builtin client below.
 
     Never raises, an unreachable server is returned as offline.
     """
-    if target.uses_mcstatus:
+    if target.client == "mcstatus":
         return _query_bedrock_mcstatus(target, timeout)
 
     transports = ("nethernet", "raknet") if target.transport == "auto" else (target.transport,)
@@ -1037,7 +1027,7 @@ def query_bedrock(target: BedrockTarget, timeout: float) -> dict[str, Any]:
 
 
 def _query_bedrock_mcstatus(target: BedrockTarget, timeout: float) -> dict[str, Any]:
-    """Query a Bedrock server via NetherNet and/or RakNet using mcstatus (with NetherNet support).
+    """Query a Bedrock server via NetherNet and/or RakNet using mcstatus.
 
     Never raises, an unreachable server is returned as offline.
     """
@@ -1147,9 +1137,8 @@ def _query_bedrock_nethernet(target: BedrockTarget, timeout: float) -> dict[str,
 
 def _query_bedrock_raknet(target: BedrockTarget, timeout: float) -> dict[str, Any]:
     """Query a Bedrock server via RakNet (UDP, legacy transport) using mcstatus, builtin client."""
-    # mcstatus with NetherNet support queries both transports by default, here only RakNet is wanted.
-    options: dict[str, Any] = {"transport": "raknet"} if MCSTATUS_NETHERNET else {}
-    status = BedrockServer(target.host, target.port, timeout=timeout, **options).status(tries=1)
+    # mcstatus queries both transports by default, here only RakNet is wanted.
+    status = BedrockServer(target.host, target.port, timeout=timeout, transport="raknet").status(tries=1)
     return _bedrock_from_status(target, status, "RakNet")
 
 
@@ -2111,11 +2100,7 @@ def log_startup_info(settings: Settings) -> None:
 
     if (bedrock := settings.bedrock) is not None:
         logger.info("Bedrock server: %s:%d (transport %s, client %s), shown as %s",
-                    bedrock.host, bedrock.port, bedrock.transport,
-                    "mcstatus" if bedrock.uses_mcstatus else "builtin", bedrock.display_hostname)
-        if bedrock.client == "mcstatus" and not bedrock.uses_mcstatus:
-            logger.info("Bedrock client: mcstatus %s has no NetherNet support yet, using builtin",
-                        package_version("mcstatus"))
+                    bedrock.host, bedrock.port, bedrock.transport, bedrock.client, bedrock.display_hostname)
     else:
         logger.info("Bedrock server: not configured, omitted from output")
 
