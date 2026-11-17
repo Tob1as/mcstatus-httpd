@@ -10,7 +10,7 @@ It uses [mcstatus](https://github.com/py-mine/mcstatus).
 Features:
 * Minecraft Java Edition and/or Bedrock Edition (a server that is not configured is omitted from the output)
 * Java: full player list and plugins via [Query](https://minecraft.wiki/w/Query), automatic fallback to the normal status ping if Query is disabled
-* Bedrock: [NetherNet](https://minecraft.wiki/w/NetherNet) (default since Bedrock 1.26.50) and RakNet (legacy), both are tried at the same time by default
+* Bedrock: [NetherNet](https://minecraft.wiki/w/NetherNet) (default since Bedrock 1.26.50) and RakNet (legacy), both are queried at the same time by default (`MINECRAFT_BEDROCK_TRANSPORT=auto`), the first answer is used. NetherNet via mcstatus or own code as fallback (`MINECRAFT_BEDROCK_CLIENT`)
 * Both servers are queried in parallel, results are cached (protects the Minecraft server)
 * Optional player avatars (Java, head or body, flat or 3D), loaded via mcstatus-httpd with cache and provider fallback
 * Optional sub path (`HTTP_PREFIX`), e.g. for a reverse proxy
@@ -57,6 +57,7 @@ Every setting can be set as environment variable or as command line argument (ar
 | `MINECRAFT_BEDROCK_SERVER_PORT`      | `--bedrock-port`      | `19132`                 | Bedrock game port (NetherNet: TCP, RakNet: UDP) |
 | `MINECRAFT_BEDROCK_SERVER_OVERWRITE` | `--bedrock-overwrite` | same as server          | Hostname shown in the output |
 | `MINECRAFT_BEDROCK_TRANSPORT`        | `--bedrock-transport` | `auto`                  | `nethernet` (TCP, default since Bedrock 1.26.50), `raknet` (UDP, legacy) or `auto` (both at the same time) |
+| `MINECRAFT_BEDROCK_CLIENT`           | `--bedrock-client`    | `mcstatus`              | Who queries Bedrock: `mcstatus` or `builtin` (own NetherNet code), see below |
 | `MINECRAFT_TIMEOUT`                  | `--timeout`           | `3`                     | Seconds until a server counts as offline |
 | `CACHE_TTL`                          | `--cache-ttl`         | `10`                    | Seconds a result is reused, `0` = query on every request |
 | `HTTP_HOST`                          | `--http-host`         | `0.0.0.0`               | Listen address, `0.0.0.0` = IPv4 only, `::` = IPv4 + IPv6 |
@@ -91,6 +92,8 @@ Every setting can be set as environment variable or as command line argument (ar
 At least one server (Java or Bedrock) must be configured.  
 With HTTPS enabled, `HTTP_PORT` only serves HTTPS (no plain HTTP), e.g. use `HTTP_PORT=8443`.  
 If HTTPS is enabled but the certificate files are missing, the service does not start.
+
+Bedrock client: mcstatus supports NetherNet only in versions newer than 14.2.0 ([py-mine/mcstatus#1226](https://github.com/py-mine/mcstatus/pull/1226)). Until then, and with `MINECRAFT_BEDROCK_CLIENT=builtin`, mcstatus-httpd queries NetherNet with its own code (RakNet always via mcstatus). The log shows the client in use at startup. Use `builtin` if a Bedrock server is shown offline with `mcstatus` but works with `builtin` (e.g. an unknown game mode is rejected by mcstatus).
 
 IPv4 + IPv6 behind a reverse proxy (e.g. Docker network with `--ipv6`):
 
@@ -223,6 +226,7 @@ services:
       MINECRAFT_BEDROCK_SERVER_PORT: 19132
       #MINECRAFT_BEDROCK_SERVER_OVERWRITE: minecraft-bedrock.example.com
       #MINECRAFT_BEDROCK_TRANSPORT: auto  # nethernet, raknet or auto
+      #MINECRAFT_BEDROCK_CLIENT: mcstatus # mcstatus or builtin
       #HTTP_PREFIX: mcstatus
       #AVATAR_ENABLE: 1                   # player avatars (Java), see "Player avatars"
     healthcheck:

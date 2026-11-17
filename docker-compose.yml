@@ -30,6 +30,7 @@ services:
       MINECRAFT_BEDROCK_SERVER_PORT: 19132
       #MINECRAFT_BEDROCK_SERVER_OVERWRITE: minecraft-bedrock.example.com
       #MINECRAFT_BEDROCK_TRANSPORT: auto  # nethernet (TCP, Bedrock >= 1.26.50), raknet (UDP, legacy) or auto (both)
+      #MINECRAFT_BEDROCK_CLIENT: mcstatus # mcstatus or builtin (own NetherNet code), see README
       #MINECRAFT_TIMEOUT: 3        # seconds until a server counts as offline
       #CACHE_TTL: 10               # seconds a result is reused, 0 = query on every request
       #HTTP_HOST: "::"             # listen on IPv4 + IPv6 (default 0.0.0.0 = IPv4 only)
