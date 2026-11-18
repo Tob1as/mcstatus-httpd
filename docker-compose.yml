@@ -45,7 +45,7 @@ services:
       #AVATAR_IMAGE_SIZE: 64                # default image width in pixels loaded from the providers (8-300)
       #AVATAR_ALLOWED_TYPES: head,body,head3d,body3d  # types allowed via ?type=
       #AVATAR_ALLOWED_SIZES: 16,32,48,64,96,128,192,256,300  # sizes allowed via ?size=
-      #AVATAR_PROVIDERS: mc-heads,minotar,crafthead  # order of preference (fallback), or own URL templates with {name}/{id} and {size}, optional "head="/"body="/... prefix
+      #AVATAR_PROVIDERS: mc-heads,minotar,crafthead,mineatar,mineskin,mc-api  # order of preference (fallback), or own URL templates with {name}/{id}/{uuid} and {size}/{scale}, optional "head="/"body="/... prefix
       #AVATAR_CACHE_TTL: 3600               # seconds until an avatar is loaded again (the old one is kept if that fails)
       #AVATAR_CACHE_TYPE: memory            # memory or file (see volumes)
       #AVATAR_CACHE_DIR: /tmp/mcstatus-httpd/avatars
@@ -53,8 +53,8 @@ services:
       #AVATAR_TLS_VERIFY: 0                 # accept self-signed HTTPS certificates of own URL templates
       #AVATAR_ONLINE_ONLY: 0                # serve avatars of any player name, not only of online players
       #AVATAR_TYPE_FALLBACK: 1              # flat avatar if a 3D avatar is not available (head3d -> head, body3d -> body)
-      #PLAYER_UUID_LOOKUP: 1                # look up player UUIDs for the avatar providers ({id}), 0 = always use the name
-      #PLAYER_UUID_PROVIDERS: mojang,minecraftservices,playerdb,minetools  # order of preference (fallback)
+      #PLAYER_UUID_LOOKUP: 1                # look up player UUIDs for the avatar providers ({id}/{uuid}), 0 = always use the name
+      #PLAYER_UUID_PROVIDERS: mojang,minecraftservices,playerdb,minetools,mc-api  # order of preference (fallback)
       #PLAYER_UUID_CACHE_TTL: 86400         # seconds until a UUID is looked up again (the old one is kept if that fails)
       #PLAYER_UUID_CACHE_TYPE: memory       # memory or file (see volumes)
       #PLAYER_UUID_CACHE_FILE: /tmp/mcstatus-httpd/uuids.json

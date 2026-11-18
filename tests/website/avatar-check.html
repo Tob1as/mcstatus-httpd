@@ -3,6 +3,8 @@
     Avatar check: compares the avatar variants of all providers for one player (mcstatus-httpd).
     Open directly in the browser or via the test environment: http://localhost:18092/avatar-check.html?u=Notch
     * = URL used by mcstatus-httpd (see AVATAR_BUILTIN_PROVIDERS in mcstatus-httpd.py, there with the UUID).
+    mineatar only accepts UUIDs and the size as scale factor ("scale" x 8 px for the flat head), the UUID
+    is looked up via playerdb.co (allows browser requests). mc-api.io is also called with the UUID.
     The last row loads the avatars via mcstatus-httpd of the test environment (only works there).
 -->
 <html lang="en">
@@ -21,14 +23,28 @@ img { image-rendering: pixelated; display: block; margin: 0 auto 4px; }
 <body>
 <form>
     Player name: <input name="u" maxlength="16" pattern="[A-Za-z0-9_]{1,16}">
-    <button>Show</button> (* = used by mcstatus-httpd)
+    <button>Show</button> (* = used by mcstatus-httpd) <span id="uuid"></span>
 </form>
 <table id="t"></table>
-<script>
+<script type="module">
 const user = new URLSearchParams(location.search).get('u') || 'Notch';
 document.querySelector('input[name="u"]').value = user;
 const u = encodeURIComponent(user);
 const local = (type) => `/s/live/mcstatus/avatar/${u}?type=${type}`;
+// mineatar needs the UUID of the player.
+const uuid = await fetch(`https://playerdb.co/api/player/minecraft/${u}`)
+  .then((response) => response.json())
+  .then((json) => json.data?.player?.raw_id ?? null)
+  .catch(() => null);
+// Alternative: mc-api.io (also allows browser requests, max. 60 requests per minute), UUID with dashes.
+//const uuid = await fetch(`https://mc-api.io/uuid/${u}`)
+//  .then((response) => (response.ok ? response.json() : {}))
+//  .then((json) => json.uuid?.replaceAll('-', '') ?? null)
+//  .catch(() => null);
+document.getElementById('uuid').textContent = `UUID: ${uuid ?? 'unknown (mineatar not available)'}`;
+const mineatar = (path, query) => (uuid ? `https://api.mineatar.io/${path}/${uuid}?${query}` : 'data:,');
+// mc-api.io renders by UUID (size = image width, FULL: height).
+const mcapi = (type, size) => (uuid ? `https://mc-api.io/render/${type}/${uuid}?size=${size}` : 'data:,');
 // [label, URL, used by mcstatus-httpd]
 const rows = [
   ['head (flat)', [
@@ -38,6 +54,11 @@ const rows = [
     ['minotar /avatar', `https://minotar.net/avatar/${u}/96.png`],
     ['crafthead /helm', `https://crafthead.net/helm/${u}/96.png`, true],
     ['crafthead /avatar', `https://crafthead.net/avatar/${u}/96.png`],
+    ['mineatar /face', mineatar('face', 'scale=12'), true],
+    ['mineatar /face overlay=false', mineatar('face', 'scale=12&overlay=false')],
+    ['mineskin /helm', `https://mineskin.eu/helm/${u}/96.png`, true],
+    ['mineskin /avatar', `https://mineskin.eu/avatar/${u}/96.png`],
+    ['mc-api FACE', mcapi('FACE', 96), true],
   ]],
   ['3D head', [
     ['mc-heads /head', `https://mc-heads.net/head/${u}/96.png`],
@@ -46,6 +67,10 @@ const rows = [
     ['mc-heads /head/nohelm', `https://mc-heads.net/head/${u}/96/nohelm.png`, true],
     ['minotar /cube', `https://minotar.net/cube/${u}/96.png`, true],
     ['crafthead /cube', `https://crafthead.net/cube/${u}/96.png`, true],
+    ['mineatar /head', mineatar('head', 'scale=7')],
+    ['mineatar /head overlay=false', mineatar('head', 'scale=7&overlay=false'), true],
+    ['mineskin /head', `https://mineskin.eu/head/${u}/96.png`, true],
+    ['mc-api HEAD', mcapi('HEAD', 96)],
   ]],
   ['body (flat)', [
     ['mc-heads /player', `https://mc-heads.net/player/${u}/64.png`, true],
@@ -53,10 +78,18 @@ const rows = [
     ['minotar /body', `https://minotar.net/body/${u}/64.png`],
     ['crafthead /armor/body', `https://crafthead.net/armor/body/${u}/64.png`, true],
     ['crafthead /body', `https://crafthead.net/body/${u}/64.png`],
+    ['mineatar /body/front', mineatar('body/front', 'scale=4'), true],
+    ['mineskin /armor/body', `https://mineskin.eu/armor/body/${u}/64.png`, true],
+    ['mineskin /body', `https://mineskin.eu/body/${u}/64.png`],
+    ['mineskin /bust', `https://mineskin.eu/bust/${u}/64.png`],
   ]],
   ['3D body', [
     ['mc-heads /body', `https://mc-heads.net/body/${u}/96.png`, true],
     ['mc-heads /body/left', `https://mc-heads.net/body/${u}/96/left.png`],
+    ['mineatar /body/full', mineatar('body/full', 'scale=5'), true],
+    ['mineatar /body/left', mineatar('body/left', 'scale=5')],
+    ['mc-api FULL', mcapi('FULL', 160)],
+    ['mc-api BUST', mcapi('BUST', 96)],
   ]],
   ['via mcstatus-httpd (test environment)', [
     ['head', local('head')],

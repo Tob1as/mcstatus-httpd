@@ -1,0 +1,19 @@
+# Override for docker-compose.yml: mcstatus-httpd with mcstatus from GitHub (default: main branch)
+# instead of the released version of requirements.txt, to test unreleased mcstatus changes with the
+# current mcstatus-httpd.py against the demo server (same configs, same port 18093).
+#
+# Start:  docker compose -f tests/demo-server/docker-compose.yml -f tests/demo-server/docker-compose.mcstatus-git.yml up -d --build
+# Stop:   docker compose -f tests/demo-server/docker-compose.yml -f tests/demo-server/docker-compose.mcstatus-git.yml down --rmi all
+#
+# Other branch, tag or commit of mcstatus: environment variable MCSTATUS_REF (e.g. MCSTATUS_REF=v15.0.0).
+# Newest commit of a branch: add --no-cache to the build if Docker uses an old download.
+# Compare with the released mcstatus: start again without this file (same configs, CACHE_TTL 0).
+
+services:
+
+  mcstatus-httpd:
+    build:
+      dockerfile: tests/demo-server/mcstatus-git.Dockerfile
+      args:
+        MCSTATUS_REF: ${MCSTATUS_REF:-main}
+    image: local/mcstatus-httpd:mcstatus-git    # fixed tag, a ref may contain "/" (branch names)

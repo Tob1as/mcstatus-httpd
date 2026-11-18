@@ -76,7 +76,7 @@ How it works: [`wsc/frame.html`](wsc/frame.html) is the page, nginx includes the
 
 ## Avatar check
 
-[`avatar-check.html`](avatar-check.html) shows all avatar variants of the providers (mc-heads, minotar, crafthead) for one player side by side, e.g. to compare the providers or to check a new provider URL. URLs used by mcstatus-httpd are marked with `*`.  
+[`avatar-check.html`](avatar-check.html) shows all avatar variants of the providers (mc-heads, minotar, crafthead, mineatar, mineskin, mc-api) for one player side by side, e.g. to compare the providers or to check a new provider URL. URLs used by mcstatus-httpd are marked with `*`. mineatar and mc-api are called with the UUID, the page looks it up via playerdb.co.  
 Open it via the test environment (http://localhost:18092/avatar-check.html?u=Notch, last row = avatars via mcstatus-httpd) or directly as file in the browser (provider rows only).
 
 Note: the browser loads the provider images directly, so the providers see your IP address (unlike mcstatus-httpd, which loads them on the server).

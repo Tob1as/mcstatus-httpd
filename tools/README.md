@@ -16,7 +16,7 @@ The scripts can be started from any directory.
 | [`wsc-styles.mjs`](wsc-styles.mjs) | measures the styles of a WSC page (for the WSC test page of the test environment) |
 | [`lib/browser.mjs`](lib/browser.mjs) | shared code: finds and starts the browser, controls it via the [DevTools protocol](https://chromedevtools.github.io/devtools-protocol/) |
 
-The test environment for the website examples (live and mock data) is in [`tests/website`](../tests/website/README.md).
+The test environment for the website examples (live and mock data) is in [`tests/website`](../tests/website/README.md), the one with a local Minecraft demo server in [`tests/demo-server`](../tests/demo-server/README.md).
 
 ## make-icons.mjs
 

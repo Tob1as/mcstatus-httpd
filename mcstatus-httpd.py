@@ -43,7 +43,7 @@ Configuration:
     AVATAR_IMAGE_SIZE                   --avatar-image-size    64 (pixels, 8-300)
     AVATAR_ALLOWED_TYPES                --avatar-allowed-types head,body,head3d,body3d
     AVATAR_ALLOWED_SIZES                --avatar-allowed-sizes 16,32,48,64,96,128,192,256,300
-    AVATAR_PROVIDERS                    --avatar-providers     mc-heads,minotar,crafthead
+    AVATAR_PROVIDERS                    --avatar-providers     mc-heads,minotar,crafthead,mineatar,mineskin,mc-api
     AVATAR_CACHE_TTL                    --avatar-cache-ttl     3600 (seconds)
     AVATAR_CACHE_TYPE                   --avatar-cache-type    memory (or file)
     AVATAR_CACHE_DIR                    --avatar-cache-dir     /tmp/mcstatus-httpd/avatars
@@ -52,7 +52,7 @@ Configuration:
     AVATAR_ONLINE_ONLY                  --[no-]avatar-online-only 1 (0 = any valid name)
     AVATAR_TYPE_FALLBACK                --[no-]avatar-type-fallback 1 (head3d -> head, body3d -> body)
     PLAYER_UUID_LOOKUP                  --[no-]player-uuid-lookup 1 (0 = always the name)
-    PLAYER_UUID_PROVIDERS               --player-uuid-providers mojang,minecraftservices,playerdb,minetools
+    PLAYER_UUID_PROVIDERS               --player-uuid-providers mojang,minecraftservices,playerdb,minetools,mc-api
     PLAYER_UUID_CACHE_TTL               --player-uuid-cache-ttl 86400 (seconds)
     PLAYER_UUID_CACHE_TYPE              --player-uuid-cache-type memory (or file)
     PLAYER_UUID_CACHE_FILE              --player-uuid-cache-file /tmp/mcstatus-httpd/uuids.json
@@ -185,13 +185,17 @@ NETHERNET_MAX_RESPONSE_SIZE: Final = 64 * 1024
 
 # Player avatars. Built-in providers with URL templates per avatar type,
 # "{id}" is replaced by the UUID of the player (or the name if unknown, see
-# PLAYER_UUID_*), "{name}" by the player name and "{size}" by the image size.
+# PLAYER_UUID_*), "{uuid}" only by the UUID (the provider is skipped if it is unknown),
+# "{name}" by the player name, "{size}" by the image size and "{scale}" by the size as
+# scale factor (see AVATAR_SCALE_BASE).
 # Verified: all providers deliver the same images for head and body (with helm/outer layer),
 # crafthead with slightly different colors of single body pixels.
 #   head, body: flat pixel art, head NxN, body Nx2N pixels (N = size)
-#   head3d:     isometric head WITHOUT helm (minotar/crafthead have no helm variant), facing right,
+#   head3d:     isometric head WITHOUT helm (minotar/crafthead/mineskin have no helm variant), facing right,
 #               the perspective differs a little between the providers
-#   body3d:     isometric body, facing right, only mc-heads
+#   body3d:     isometric body, facing right, only mc-heads and mineatar
+# mc-api only delivers head: its 3D renders (HEAD, FULL) use a perspective view facing left with
+# shadow and do not match the other providers.
 AVATAR_TYPES: Final = ("head", "body", "head3d", "body3d")
 AVATAR_BUILTIN_PROVIDERS: Final = {
     "mc-heads": {  # https://mc-heads.net/
@@ -210,7 +214,24 @@ AVATAR_BUILTIN_PROVIDERS: Final = {
         "body": "https://crafthead.net/armor/body/{id}/{size}.png",
         "head3d": "https://crafthead.net/cube/{id}/{size}.png",
     },
+    "mineatar": {  # https://mineatar.io/ (only UUIDs, names are rejected with HTTP 400)
+        "head": "https://api.mineatar.io/face/{uuid}?scale={scale}",
+        "body": "https://api.mineatar.io/body/front/{uuid}?scale={scale}",
+        "head3d": "https://api.mineatar.io/head/{uuid}?scale={scale}&overlay=false",
+        "body3d": "https://api.mineatar.io/body/full/{uuid}?scale={scale}",
+    },
+    "mineskin": {  # https://mineskin.eu/ (same URL layout as minotar, 3D head = "head")
+        "head": "https://mineskin.eu/helm/{id}/{size}.png",
+        "body": "https://mineskin.eu/armor/body/{id}/{size}.png",
+        "head3d": "https://mineskin.eu/head/{id}/{size}.png",
+    },
+    "mc-api": {  # https://mc-api.io/ (60 requests per minute and IP without API key)
+        "head": "https://mc-api.io/render/FACE/{uuid}?size={size}",
+    },
 }
+# Image width in pixels at scale factor 1 per avatar type, "{scale}" = size / width (rounded, at least 1).
+# mineatar renders with an integer scale (head: 8 px per scale, 3D sizes measured at scale 4 and 8).
+AVATAR_SCALE_BASE: Final = {"head": 8.0, "body": 16.0, "head3d": 13.75, "body3d": 17.5}
 # Allowed image width in pixels requested from the providers (AVATAR_IMAGE_SIZE, AVATAR_ALLOWED_SIZES).
 # All providers deliver at least 8 px, minotar and crafthead at most 300 px (mc-heads 600 px).
 AVATAR_MIN_IMAGE_SIZE: Final = 8
@@ -239,7 +260,7 @@ AVATAR_SIZE_PATTERN: Final = re.compile(r"[0-9]{1,3}")
 AVATAR_TYPE_PREFIX_PATTERN: Final = re.compile(r"([a-z0-9]+)=(.*)", re.IGNORECASE)
 PNG_SIGNATURE: Final = b"\x89PNG\r\n\x1a\n"
 
-# Player UUIDs (name -> UUID), used for the "{id}" placeholder of the avatar providers.
+# Player UUIDs (name -> UUID), used for the "{id}" and "{uuid}" placeholders of the avatar providers.
 # Built-in lookup services, "{name}" is replaced by the player name. Each one answers
 # differently, see _parse_player_uuid().
 PLAYER_UUID_BUILTIN_PROVIDERS: Final = {
@@ -247,6 +268,7 @@ PLAYER_UUID_BUILTIN_PROVIDERS: Final = {
     "minecraftservices": "https://api.minecraftservices.com/minecraft/profile/lookup/name/{name}",
     "playerdb": "https://playerdb.co/api/player/minecraft/{name}",
     "minetools": "https://api.minetools.eu/uuid/{name}",
+    "mc-api": "https://mc-api.io/uuid/{name}",
 }
 # Seconds to wait for a UUID lookup service.
 PLAYER_UUID_FETCH_TIMEOUT: Final = 3.0
@@ -291,7 +313,7 @@ class AvatarProvider:
     """An avatar provider with its URL templates per avatar type."""
 
     label: str  # shown in the log, e.g. "mc-heads" or the host of an own URL template
-    templates: Mapping[str, str]  # avatar type -> URL with "{id}"/"{name}" and optional "{size}"
+    templates: Mapping[str, str]  # avatar type -> URL with "{id}"/"{uuid}"/"{name}" and optional "{size}"/"{scale}"
     verify_tls: bool = True  # False = accept any HTTPS certificate (only own URL templates)
 
 
@@ -324,7 +346,7 @@ class Settings:
     avatar_tls_verify: bool  # False = no certificate check for own URL templates
     avatar_online_only: bool  # True = only avatars of players in the current status
     avatar_type_fallback: bool  # True = flat avatar if a 3D avatar is not available
-    player_uuid_lookup: bool  # False = "{id}" is always the player name
+    player_uuid_lookup: bool  # False = "{id}" is always the player name, "{uuid}" providers are skipped
     player_uuid_providers: tuple[str, ...]  # names of PLAYER_UUID_BUILTIN_PROVIDERS, fallback order
     player_uuid_cache_ttl: float
     player_uuid_cache_type: str  # one of CACHE_TYPES
@@ -547,9 +569,9 @@ def _avatar_providers(value: str) -> tuple[tuple[str | None, str], ...]:
     """Argument type: avatar providers in order of preference.
 
     Each entry is a built-in provider (see AVATAR_BUILTIN_PROVIDERS) or an own
-    URL template with "{name}" (or "{id}" = UUID) and optional "{size}", e.g. of
-    a server plugin. An own URL template can start with "<type>=" if it only
-    delivers this type:
+    URL template with "{name}" (or "{id}"/"{uuid}" = UUID) and optional "{size}"
+    or "{scale}", e.g. of a server plugin. An own URL template can start with
+    "<type>=" if it only delivers this type:
     "head=http://minecraft:8100/tiles/faces/32x32/{name}.png, mc-heads, minotar"
 
     Returns:
@@ -572,7 +594,7 @@ def _avatar_providers(value: str) -> tuple[tuple[str | None, str], ...]:
                 )
         parts = urlsplit(item)
         if (parts.scheme not in ("http", "https") or not parts.netloc
-                or ("{name}" not in item and "{id}" not in item)):
+                or not any(placeholder in item for placeholder in ("{name}", "{id}", "{uuid}"))):
             raise argparse.ArgumentTypeError(
                 f"invalid avatar provider {item!r}, use {', '.join(AVATAR_BUILTIN_PROVIDERS)} "
                 "or an URL template like '[head=]https://example.com/avatar/{name}/{size}.png'"
@@ -713,8 +735,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     option(avatar, "--avatar-providers", env="AVATAR_PROVIDERS", default=",".join(AVATAR_BUILTIN_PROVIDERS),
            type=_avatar_providers, metavar="PROVIDERS",
            text="Avatar providers in order of preference, the next one is used if a provider fails: "
-                f"{', '.join(AVATAR_BUILTIN_PROVIDERS)} or own URL templates with {{name}} (or {{id}} = UUID) "
-                "and {size}, optionally limited to one type with '<type>=' "
+                f"{', '.join(AVATAR_BUILTIN_PROVIDERS)} or own URL templates with {{name}} (or {{id}}/{{uuid}} = UUID) "
+                "and {size} or {scale}, optionally limited to one type with '<type>=' "
                 f"(default: {','.join(AVATAR_BUILTIN_PROVIDERS)}).")
     option(avatar, "--avatar-cache-ttl", env="AVATAR_CACHE_TTL", default="3600", type=_cache_ttl,
            metavar="SECONDS",
@@ -1240,6 +1262,12 @@ def _parse_player_uuid(provider: str, status: int, data: Any) -> str | None:
             return None
         player = (data.get("data") or {}).get("player") or {} if status == HTTPStatus.OK else {}
         value = player.get("raw_id") or player.get("id") if isinstance(player, dict) else None
+    elif provider == "mc-api":
+        # {"uuid": "853c80ef-3c37-49fd-aa49-938b674adae6", "cachedAt": ...}, unknown name: HTTP 404,
+        # a name that cannot be a Java name: HTTP 400 (both with {"error": true, "message": ...})
+        if status in (HTTPStatus.NOT_FOUND, HTTPStatus.BAD_REQUEST):
+            return None
+        value = data.get("uuid") if status == HTTPStatus.OK else None
     else:  # minetools
         # {"id": "853c80ef...", "name": "jeb_", "status": "OK"}, unknown name: HTTP 200
         # {"id": null, "name": "...", "status": "ERR"} or {"error": "Invalid UUID or nickname.", "status": "ERR"}
@@ -1419,10 +1447,6 @@ class PlayerUUIDs:
             return entry[1]
         return None
 
-    def uuid_or_name(self, name: str) -> str:
-        """Return the UUID of a player, the name if it is unknown or no service answered."""
-        return self.lookup(name) or name
-
     def _is_fresh(self, entry: tuple[float, str | None]) -> bool:
         stored_at, uuid = entry
         ttl = self._ttl if uuid is not None else min(self._ttl, PLAYER_UUID_UNKNOWN_TTL)
@@ -1453,8 +1477,14 @@ class PlayerUUIDs:
 
 
 def _uses_player_id(settings: Settings) -> bool:
-    """Whether an avatar provider uses the "{id}" placeholder, only then UUIDs are looked up."""
-    return any("{id}" in template for provider in settings.avatar_providers for template in provider.templates.values())
+    """Whether an avatar provider uses "{id}" or "{uuid}", only then UUIDs are looked up."""
+    return any("{id}" in template or "{uuid}" in template
+               for provider in settings.avatar_providers for template in provider.templates.values())
+
+
+def _avatar_scale(avatar_type: str, size: int) -> int:
+    """Image size as scale factor for "{scale}", e.g. head 64 px -> 8 (8 px per scale)."""
+    return max(1, round(size / AVATAR_SCALE_BASE[avatar_type]))
 
 
 # ---------------------------------------------------------------------------
@@ -1666,7 +1696,7 @@ class AvatarStore:
 
     def __init__(self, settings: Settings, uuids: PlayerUUIDs | None = None) -> None:
         self._providers = settings.avatar_providers
-        self._uuids = uuids  # None = "{id}" is the player name
+        self._uuids = uuids  # None = "{id}" is the player name, providers with "{uuid}" are skipped
         self._type_fallback = settings.avatar_type_fallback
         self._ttl = settings.avatar_cache_ttl
         self._cache: MemoryAvatarCache | FileAvatarCache = (
@@ -1759,17 +1789,24 @@ class AvatarStore:
 
     def _download(self, name: str, avatar_type: str, size: int) -> bytes | None:
         """Try the providers of the avatar type in order until one delivers the avatar."""
-        player_id: str | None = None  # UUID or name for "{id}", only looked up if needed
+        uuid: str | None = None  # only looked up if a provider needs it
+        uuid_looked_up = False
         for provider in self._providers:
             if (template := provider.templates.get(avatar_type)) is None:
                 continue
             with self._lock:
                 if self._paused_until.get(provider.label, 0.0) > time.monotonic():
                     continue
-            if "{id}" in template and player_id is None:
-                player_id = self._uuids.uuid_or_name(name) if self._uuids is not None else name
-            url = (template.replace("{id}", quote(player_id or name)).replace("{name}", quote(name))
-                   .replace("{size}", str(size)))
+            if ("{id}" in template or "{uuid}" in template) and not uuid_looked_up:
+                uuid = self._uuids.lookup(name) if self._uuids is not None else None
+                uuid_looked_up = True
+            if "{uuid}" in template and uuid is None:
+                # E.g. mineatar rejects names, without UUID the provider is skipped (not paused).
+                logger.debug("Avatar provider %s skipped for %s (UUID unknown)", provider.label, name)
+                continue
+            url = (template.replace("{uuid}", uuid or "").replace("{id}", quote(uuid or name))
+                   .replace("{name}", quote(name)).replace("{size}", str(size))
+                   .replace("{scale}", str(_avatar_scale(avatar_type, size))))
             try:
                 image = _download_avatar(url, None if provider.verify_tls else self._insecure_context)
             except AvatarProviderError as exc:
@@ -2127,9 +2164,9 @@ def log_startup_info(settings: Settings) -> None:
                     f" ({settings.avatar_cache_dir})" if settings.avatar_cache_type == "file" else "",
                     settings.avatar_cache_ttl, settings.avatar_cache_max_entries or "unlimited")
         if not _uses_player_id(settings):
-            logger.info("Player UUIDs: not needed (no avatar provider uses {id})")
+            logger.info("Player UUIDs: not needed (no avatar provider uses {id} or {uuid})")
         elif not settings.player_uuid_lookup:
-            logger.info("Player UUIDs: lookup disabled, {id} = player name")
+            logger.info("Player UUIDs: lookup disabled, {id} = player name, providers with {uuid} are skipped")
         else:
             logger.info("Player UUIDs: providers %s, cache %s%s, TTL %gs, max. entries: %s",
                         ", ".join(settings.player_uuid_providers), settings.player_uuid_cache_type,

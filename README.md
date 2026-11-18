@@ -73,7 +73,7 @@ Every setting can be set as environment variable or as command line argument (ar
 | `AVATAR_IMAGE_SIZE`                  | `--avatar-image-size` | `64`                    | Default image width in pixels requested from the providers (`8`-`300`), body images are twice as high |
 | `AVATAR_ALLOWED_TYPES`               | `--avatar-allowed-types` | `head,body,head3d,body3d` | Types that can be requested with `?type=` (the default type is always allowed) |
 | `AVATAR_ALLOWED_SIZES`               | `--avatar-allowed-sizes` | `16,32,48,64,96,128,192,256,300` | Sizes that can be requested with `?size=` (`8`-`300`, the default size is always allowed) |
-| `AVATAR_PROVIDERS`                   | `--avatar-providers`  | `mc-heads,minotar,crafthead` | Avatar providers in order of preference (fallback), built-in names or own URL templates |
+| `AVATAR_PROVIDERS`                   | `--avatar-providers`  | `mc-heads,minotar,crafthead,mineatar,mineskin,mc-api` | Avatar providers in order of preference (fallback), built-in names or own URL templates |
 | `AVATAR_CACHE_TTL`                   | `--avatar-cache-ttl`  | `3600`                  | Seconds an avatar is used before it is loaded again (the old one is kept if loading fails) |
 | `AVATAR_CACHE_TYPE`                  | `--avatar-cache-type` | `memory`                | `memory` (lost on restart) or `file` |
 | `AVATAR_CACHE_DIR`                   | `--avatar-cache-dir`  | `/tmp/mcstatus-httpd/avatars` | Directory of the file cache |
@@ -82,7 +82,7 @@ Every setting can be set as environment variable or as command line argument (ar
 | `AVATAR_ONLINE_ONLY`                 | `--[no-]avatar-online-only` | `1`               | Only serve avatars of online players, `0` = any valid player name (see below) |
 | `AVATAR_TYPE_FALLBACK`               | `--[no-]avatar-type-fallback` | `1`             | Serve the flat avatar if a 3D avatar is not available (`head3d` → `head`, `body3d` → `body`) |
 | `PLAYER_UUID_LOOKUP`                 | `--[no-]player-uuid-lookup` | `1`               | Look up the UUID of a player for the avatar providers, `0` = always use the name, see [Player UUIDs](#player-uuids) |
-| `PLAYER_UUID_PROVIDERS`              | `--player-uuid-providers` | `mojang,minecraftservices,playerdb,minetools` | UUID lookup services in order of preference (fallback) |
+| `PLAYER_UUID_PROVIDERS`              | `--player-uuid-providers` | `mojang,minecraftservices,playerdb,minetools,mc-api` | UUID lookup services in order of preference (fallback) |
 | `PLAYER_UUID_CACHE_TTL`              | `--player-uuid-cache-ttl` | `86400`             | Seconds a UUID is used before it is looked up again (the old one is kept if that fails) |
 | `PLAYER_UUID_CACHE_TYPE`             | `--player-uuid-cache-type` | `memory`           | `memory` (lost on restart) or `file` |
 | `PLAYER_UUID_CACHE_FILE`             | `--player-uuid-cache-file` | `/tmp/mcstatus-httpd/uuids.json` | JSON file of the UUID cache |
@@ -129,11 +129,11 @@ The name is shown as tooltip on mouse over and on tap.
   * `head`: flat head with helm (e.g. 64x64 px)
   * `body`: flat front view with the outer skin layer (e.g. 64x128 px)
   * `head3d`: isometric head **without** helm, facing right (e.g. 57x60 px, size and perspective differ a little by provider)
-  * `body3d`: isometric body, facing right (e.g. 64x154 px), only provided by `mc-heads`
+  * `body3d`: isometric body, facing right (e.g. 64x154 px), provided by `mc-heads` and `mineatar`
 
-  All providers deliver the same images for `head` and `body`. `head3d` is without helm, because `minotar` and `crafthead` have no 3D head with helm.
+  All providers deliver the same images for `head` and `body`. `head3d` is without helm, because `minotar`, `crafthead` and `mineskin` have no 3D head with helm.
 
-  If no provider delivers a 3D avatar and none is cached (e.g. `mc-heads` is down, the only provider of `body3d`), the flat avatar is served instead (`head3d` → `head`, `body3d` → `body`), so a website shows an avatar and not the name. The replacement is only cached by the browser for 5 minutes, the 3D avatar is tried again after that. The response header `X-Avatar-Type` shows the delivered type. Disable with `AVATAR_TYPE_FALLBACK=0`.
+  If no provider delivers a 3D avatar and none is cached (e.g. `mc-heads` and `mineatar` are down, the only providers of `body3d`), the flat avatar is served instead (`head3d` → `head`, `body3d` → `body`), so a website shows an avatar and not the name. The replacement is only cached by the browser for 5 minutes, the 3D avatar is tried again after that. The response header `X-Avatar-Type` shows the delivered type. Disable with `AVATAR_TYPE_FALLBACK=0`.
 * `AVATAR_IMAGE_SIZE`: default image width loaded from the providers (`{size}` in URL templates). The website examples show the avatars in their own size (`AVATAR_SIZE` in the HTML) and scale them sharp (pixel art), so 64 is enough for most pages. Own URL templates without `{size}` always deliver their own size.
 * Type and size can be chosen per request, other values return 400:
   ```
@@ -142,14 +142,14 @@ The name is shown as tooltip on mouse over and on tap.
   ```
   Allowed are the values of `AVATAR_ALLOWED_TYPES` and `AVATAR_ALLOWED_SIZES` (a fixed list, so the number of cached variants stays small).
 * `AVATAR_PROVIDERS`: providers in order of preference. If a provider fails (timeout, error, rate limit), the next one is used and the failing one is paused for a while (rate limits: as long as the provider asks for via `Retry-After`).
-  * Built-in: `mc-heads` ([mc-heads.net](https://mc-heads.net/), all types), `minotar` ([minotar.net](https://minotar.net/)) and `crafthead` ([crafthead.net](https://crafthead.net/)), both all types except `body3d`. All are called with the UUID of the player (see [Player UUIDs](#player-uuids)). A provider without the requested type is skipped.
-  * Own URL templates with `{name}` (player name) or `{id}` (UUID, or the name if unknown) and optional `{size}`, e.g. of a server plugin (must deliver PNG). A template is used for the default type, or with a prefix like `head=` or `body3d=` for this type:
+  * Built-in: `mc-heads` ([mc-heads.net](https://mc-heads.net/), all types), `minotar` ([minotar.net](https://minotar.net/)) and `crafthead` ([crafthead.net](https://crafthead.net/)), both all types except `body3d`, and `mineatar` ([mineatar.io](https://mineatar.io/), all types), `mineskin` ([mineskin.eu](https://mineskin.eu/), all types except `body3d`) and `mc-api` ([mc-api.io](https://mc-api.io/), only `head`, max. 60 requests per minute). All are called with the UUID of the player (see [Player UUIDs](#player-uuids)). `mineatar` and `mc-api` only get UUIDs, they are skipped for players without known UUID. A provider without the requested type is skipped.
+  * Own URL templates with `{name}` (player name), `{id}` (UUID, or the name if unknown) or `{uuid}` (UUID, the template is skipped if unknown) and optional `{size}` (image width in pixels) or `{scale}` (size as scale factor, e.g. head 64 px = 8, for providers like mineatar), e.g. of a server plugin (must deliver PNG). A template is used for the default type, or with a prefix like `head=` or `body3d=` for this type:
     ```yml
-    AVATAR_PROVIDERS: "head=http://minecraft:8100/tiles/faces/32x32/{name}.png, mc-heads, minotar, crafthead"
+    AVATAR_PROVIDERS: "head=http://minecraft:8100/tiles/faces/32x32/{name}.png, mc-heads, minotar, crafthead, mineatar, mineskin, mc-api"
     ```
     If the plugin uses HTTPS with a self-signed certificate, set `AVATAR_TLS_VERIFY: 0` (only for own URL templates, prefer `http://` inside a Docker network).
 * Every Java account has a skin (the default skins Steve, Alex etc. if none was chosen). Names without Mojang account (offline-mode servers, Geyser/Floodgate players like `.Name`, `Anonymous Player` of hidden player lists):
-  * `mc-heads` and `crafthead` deliver the default head (Steve), `minotar` answers 404 and the next provider is tried.
+  * `mc-heads`, `crafthead` and `mineskin` deliver the default head (Steve), `minotar` answers 404 and the next provider is tried, `mineatar` and `mc-api` are skipped (no UUID).
   * Names that are no valid Java names (e.g. `.Name`) are not requested at all.
   * If no provider has an avatar, the website shows the name as text, so every player is listed.
 * Cache:
@@ -168,17 +168,18 @@ The name is shown as tooltip on mouse over and on tap.
 
 ### Player UUIDs
 
-The avatar providers recommend UUIDs instead of names (names are slower and more likely to be rate limited). mcstatus-httpd looks up the UUID of a player by name when an avatar is loaded (only if a provider uses `{id}`, the built-in providers do):
+The avatar providers recommend UUIDs instead of names (names are slower and more likely to be rate limited). mcstatus-httpd looks up the UUID of a player by name when an avatar is loaded (only if a provider uses `{id}` or `{uuid}`, the built-in providers do):
 
 * `PLAYER_UUID_PROVIDERS`: lookup services in order of preference. If a service fails (timeout, error, rate limit), the next one is used and the failing one is paused for a while.
   * `mojang`: [api.mojang.com](https://minecraft.wiki/w/Mojang_API)
   * `minecraftservices`: api.minecraftservices.com (also Mojang, other server)
   * `playerdb`: [playerdb.co](https://playerdb.co/)
   * `minetools`: [api.minetools.eu](https://api.minetools.eu/)
+  * `mc-api`: [mc-api.io](https://mc-api.io/) (max. 60 requests per minute)
 * If a service does not know the name (no Mojang account) or no service answers, the name is used instead, so the avatar providers still get a request.
 * UUIDs are cached for `PLAYER_UUID_CACHE_TTL` seconds (unknown names at most 1 hour). After that the next avatar download looks it up again, if that fails the old UUID is kept.
 * `PLAYER_UUID_CACHE_TYPE=file` keeps the UUIDs across restarts in `PLAYER_UUID_CACHE_FILE` (JSON), see the volume example above.
-* `PLAYER_UUID_LOOKUP=0` disables the lookup, `{id}` is then always the name.
+* `PLAYER_UUID_LOOKUP=0` disables the lookup, `{id}` is then always the name and providers with `{uuid}` (e.g. `mineatar`) are skipped.
 * The avatar cache files are named by player name, they do not change.
 
 ## Website examples
@@ -279,6 +280,7 @@ git push origin v2.0.0
   * a WSC test page: the WSC boxes in the sidebar, in the footer or as own page in the look of a WSC forum (light and dark)
 
   The files in `examples/` are used directly, a change is visible after reloading the page.
+* [tests/demo-server](tests/demo-server/README.md): mcstatus-httpd (built from the current code) against a local fake Minecraft server, the [demo-server of mcstatus.io](https://github.com/mcstatus-io/demo-server) (only Docker needed). Start with `docker compose -f tests/demo-server/docker-compose.yml up -d --build` and open http://localhost:18093/mcstatus. Ready-made configs for many players, empty server, Java without Query, only one server and long texts; own configs are simple YAML files. Server offline: stop the demo server container. With an override file mcstatus-httpd is built with mcstatus from GitHub (main branch or any tag/commit) to test unreleased mcstatus changes.
 * [tools](tools/README.md): helper scripts (Node.js >= 22 and Chrome, Chromium or Edge, no npm packages):
   * `make-icons.mjs`: generates the icons of `examples/icons` (SVG, optionally PNG and WebP)
   * `screenshot.mjs`: screenshot of a page or of a single status box (e.g. for the README), optionally dark mode, mouse over, only one server and anonymized address, players and MOTD

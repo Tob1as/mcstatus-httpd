@@ -1,0 +1,58 @@
+# Test environment: mcstatus-httpd against a local fake Minecraft server
+# (https://github.com/mcstatus-io/demo-server, Java status + query, Bedrock status).
+# Needs no internet for the status (avatars are still loaded from the providers).
+#
+# Start:  docker compose -f tests/demo-server/docker-compose.yml up -d --build
+# Open:   http://localhost:18093/mcstatus
+# Stop:   docker compose -f tests/demo-server/docker-compose.yml down --rmi all
+#
+# Other config of the demo server: config/<name>.yml, selected with DEMO_SERVER_CONFIG
+# (the container is recreated with "up -d" when the value changes):
+#   bash:       DEMO_SERVER_CONFIG=full docker compose -f tests/demo-server/docker-compose.yml up -d
+#   PowerShell: $env:DEMO_SERVER_CONFIG="full"; docker compose -f tests/demo-server/docker-compose.yml up -d
+#
+# Offline server: docker compose -f tests/demo-server/docker-compose.yml stop demo-server
+
+services:
+
+  # Fake Minecraft server, see Dockerfile and config/.
+  demo-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        REF: ${DEMO_SERVER_REF:-main}      # branch, tag or commit SHA of mcstatus-io/demo-server
+    image: local/mcstatus-demo-server:${DEMO_SERVER_REF:-main}
+    container_name: mcstatus-demo-server-test
+    volumes:
+      - ./config/${DEMO_SERVER_CONFIG:-default}.yml:/app/config.yml:ro
+    #ports:                                 # only needed to query it from the host
+    #  - 25566:25565/tcp                    # Java status
+    #  - 25566:25565/udp                    # Java query
+    #  - 19133:19132/udp                    # Bedrock status (RakNet)
+
+  # Real mcstatus-httpd built from this repository.
+  mcstatus-httpd:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      target: production
+      args:
+        VERSION: test
+    image: ghcr.io/tob1as/mcstatus-httpd:test
+    container_name: mcstatus-httpd-demo-test
+    ports:
+      - 18093:8080/tcp
+    environment:
+      # Queried via the service name, shown as the public hostname.
+      MINECRAFT_JAVA_SERVER: demo-server
+      MINECRAFT_JAVA_SERVER_OVERWRITE: minecraft.example.com
+      MINECRAFT_BEDROCK_SERVER: demo-server
+      MINECRAFT_BEDROCK_SERVER_OVERWRITE: minecraft.example.com
+      #MINECRAFT_BEDROCK_TRANSPORT: raknet  # demo-server only speaks RakNet (UDP), auto works as well
+      HTTP_PREFIX: mcstatus
+      CACHE_TTL: 0                         # every request queries the demo server
+      AVATAR_ENABLE: 1
+      #LOGLEVEL: DEBUG
+    depends_on:
+      - demo-server

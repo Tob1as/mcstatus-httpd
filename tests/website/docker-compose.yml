@@ -26,7 +26,7 @@ services:
       AVATAR_ENABLE: 1
       AVATAR_ONLINE_ONLY: 0                # avatars for every player name of the mock data
       #AVATAR_TYPE: head                   # default type: head, body, head3d or body3d
-      #AVATAR_PROVIDERS: mc-heads,minotar,crafthead
+      #AVATAR_PROVIDERS: mc-heads,minotar,crafthead,mineatar,mineskin,mc-api
       #PLAYER_UUID_LOOKUP: 0               # 0 = avatar providers get the name instead of the UUID
       #LOGLEVEL: DEBUG
 

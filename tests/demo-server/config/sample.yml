@@ -1,0 +1,69 @@
+# Sample: Java without query -> mcstatus-httpd uses the status fallback.
+# 47 online, but only 12 names plus a fake entry with the NIL UUID (like "... and 35 more"
+# of some server plugins), which mcstatus-httpd must skip. brand/plugins/map are empty.
+java_edition:
+  status:
+    enable: true
+    host: 0.0.0.0
+    port: 25565
+    disconnect_reason:
+      text: Test server, you cannot play here.
+  query:
+    enable: false
+  options:
+    players:
+      online:
+        value: 47
+      max:
+        value: 100
+      sample:
+        - username: Notch
+          uuid: 069a79f4-44e9-4726-a5be-fca90e38aaf5
+        - username: jeb_
+          uuid: 853c80ef-3c37-49fd-aa49-938b674adae6
+        - username: Dinnerbone
+          uuid: 61699b2e-d327-4a01-9f1e-0ea8c3f06bc6
+        - username: Grumm
+          uuid: e6b5c088-0680-44df-9e1b-9bf11792291b
+        - username: PassTheMayo
+          uuid: 85e5f06e-ff89-4c11-8050-329e8fdc29de
+        - username: Technoblade
+          uuid: 00000000-0000-4000-8000-000000000006
+        - username: Dream
+          uuid: 00000000-0000-4000-8000-000000000007
+        - username: Grian
+          uuid: 00000000-0000-4000-8000-000000000008
+        - username: MumboJumbo
+          uuid: 00000000-0000-4000-8000-000000000009
+        - username: Xisuma
+          uuid: 00000000-0000-4000-8000-000000000010
+        - username: iskall85
+          uuid: 00000000-0000-4000-8000-000000000011
+        - username: TangoTek
+          uuid: 00000000-0000-4000-8000-000000000012
+        - username: '... and 35 more'
+          uuid: 00000000-0000-0000-0000-000000000000
+    version:
+      name: Paper 1.21.4
+      protocol: 769
+    motd:
+      text: Status only, no query
+bedrock_edition:
+  status:
+    enable: true
+    host: 0.0.0.0
+    port: 19132
+  options:
+    edition: MCPE
+    motd:
+      line_1: A Bedrock server
+      line_2: Bedrock level
+    version:
+      name: 1.21.50
+      protocol: 766
+    players:
+      online:
+        value: 5
+      max:
+        value: 10
+    gamemode: survival

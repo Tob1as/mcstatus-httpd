@@ -1,0 +1,26 @@
+# Bedrock only: Java (status and query) is not started.
+# With the docker-compose.yml (Java configured in mcstatus-httpd) = Java offline, Bedrock online.
+java_edition:
+  status:
+    enable: false
+  query:
+    enable: false
+bedrock_edition:
+  status:
+    enable: true
+    host: 0.0.0.0
+    port: 19132
+  options:
+    edition: MCPE
+    motd:
+      line_1: Bedrock only
+      line_2: Bedrock level
+    version:
+      name: 1.21.50
+      protocol: 766
+    players:
+      online:
+        value: 4
+      max:
+        value: 10
+    gamemode: adventure
